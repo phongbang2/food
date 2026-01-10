@@ -52,9 +52,9 @@ function render(data) {
         <h3>${row["Tên quán"] || "Không tên"}</h3>
 
         ${row["Món"] ? `<p><b>Món:</b> ${row["Món"]}</p>` : ""}
-        ${row["Địa chỉ"] ? `<p><b>Địa chỉ:</b> ${row["Địa chỉ"]}</p>` : ""}
+        ${row["Tên đường"] ? `<p><b>Tên đường:</b> ${row["Tên đường"]}</p>` : ""}
         ${row["Quận"] ? `<p><b>Quận:</b> ${row["Quận"]}</p>` : ""}
-        ${row["Giờ mở"] ? `<p><b>Giờ mở:</b> ${row["Giờ mở"]}</p>` : ""}
+        ${row["Giờ mở cửa"] ? `<p><b>Giờ mở cửa:</b> ${row["Giờ mở cửa"]}</p>` : ""}
       </div>
     `;
   });
