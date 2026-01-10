@@ -1,21 +1,60 @@
-<!-- trigger rebuild -->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <title>Food App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <title>Danh sách quán ăn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- PapaParse: đọc CSV từ Google Sheets -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 10px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Danh sách quán ăn</h2>
+  <h2>Danh sách quán ăn</h2>
 
-<input type="file" id="file" accept=".xlsx" />
-<input type="text" id="search" placeholder="Tìm kiếm..." />
+  <input
+    type="text"
+    id="search"
+    placeholder="Tìm kiếm (tên quán, địa chỉ, món, quận...)"
+  />
 
-<div id="table"></div>
+  <div id="table">Đang tải dữ liệu...</div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="app.js"></script>
+  <!-- Logic app -->
+  <script src="app.js"></script>
+
 </body>
 </html>
