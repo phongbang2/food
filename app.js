@@ -80,7 +80,7 @@ function render(data) {
         
         ${row["Tên món"] ? `<p><strong>Món nổi bật:</strong> ${row["Tên món"]}</p>` : ""}
         
-        ${diaChi ? `<p><strong>Địa chỉ:</strong> ${diaChi}</p>` : ""}
+        ${row[Tên đường] ? `<p><strong>Địa chỉ:</strong> ${row[Tên đường]}</p>` : ""}
         
         ${row["Giờ mở cửa"] ? `<p><strong>Giờ mở cửa:</strong> ${row["Giờ mở cửa"]}</p>` : ""}
         
