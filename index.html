@@ -5,7 +5,6 @@
   <title>Food Finder</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
@@ -22,29 +21,27 @@
       margin: auto;
     }
 
-    .header {
-      margin-bottom: 12px;
-    }
-
-    .header h1 {
+    h1 {
       font-size: 22px;
-      margin: 0;
+      margin: 0 0 4px;
     }
 
-    .header p {
-      margin: 4px 0 0;
+    .sub {
       font-size: 14px;
       color: #666;
     }
 
-    .search-box {
+    .filters {
       margin: 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .search-box input {
+    .filters input {
       width: 100%;
       padding: 14px;
-      font-size: 17px;
+      font-size: 16px;
       border-radius: 14px;
       border: none;
       outline: none;
@@ -62,7 +59,6 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      margin-top: 10px;
     }
 
     .card {
@@ -106,22 +102,18 @@
 
 <body>
   <div class="app">
-    <div class="header">
-      <h1>🍜 Food Finder</h1>
-      <p>Tìm quán theo món, quận hoặc loại món</p>
-    </div>
+    <h1>🍜 Food Finder</h1>
+    <div class="sub">Tìm quán ăn nhanh & chính xác</div>
 
-    <div class="search-box">
-      <input
-        type="text"
-        id="search"
-        placeholder="VD: bún bò, quận 3, hải sản..."
-      />
+    <div class="filters">
+      <input id="foodInput" placeholder="🍜 Tên món (bún bò, cơm tấm…)" />
+      <input id="districtInput" placeholder="📍 Quận (1, 3, Bình Thạnh…)" />
+      <input id="typeInput" placeholder="🏷️ Phân loại (ăn vặt, hải sản…)" />
     </div>
 
     <div id="result">
       <div class="hint">
-        Nhập <b>tên món</b>, <b>quận</b> hoặc <b>phân loại món</b> để bắt đầu tìm
+        Nhập ít nhất <b>1 ô</b> để bắt đầu tìm kiếm
       </div>
     </div>
   </div>
