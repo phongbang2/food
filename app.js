@@ -4,16 +4,15 @@ const sheetUrl = "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vz
 async function fetchData(retries = 3) {
   const tableEl = document.getElementById("table");
   tableEl.classList.add("loading");
-  tableEl.innerHTML = "Đang tải dữ liệu...";
+  tableEl.innerHTML = "Đang tải dữ liệu... Vui lòng chờ...";
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const res = await fetch(sheetUrl, {
         headers: { 'Accept': 'text/csv; charset=utf-8' }
       });
-      if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+      if (!res.ok) throw new Error(`Lỗi tải: ${res.status}`);
 
-      // Decode thủ công UTF-8 để tránh lỗi encoding
       const buffer = await res.arrayBuffer();
       const decoder = new TextDecoder('utf-8');
       const csvText = decoder.decode(buffer);
@@ -21,20 +20,22 @@ async function fetchData(retries = 3) {
       const parsed = Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        transformHeader: h => h.trim(), // Trim header
-        transform: val => val.trim()    // Trim value
+        transformHeader: h => h.trim().normalize("NFC"), // Normalize accents
+        transform: val => (val || "").trim(),
+        delimiter: ",", // Default nhưng đảm bảo
+        quoteChar: '"'
       });
 
-      allData = parsed.data.filter(row => row["Tên quán"]); // Lọc row rỗng
+      allData = parsed.data.filter(row => row["Tên quán"] && row["Tên quán"].trim());
       render(allData);
       return;
     } catch (error) {
-      console.error(`Attempt ${attempt} failed:`, error);
+      console.error(`Thử ${attempt} thất bại:`, error);
       if (attempt === retries) {
         tableEl.classList.remove("loading");
-        tableEl.innerHTML = '<p class="no-data">Không tải được dữ liệu. Kiểm tra kết nối hoặc sheet có public không.</p>';
+        tableEl.innerHTML = '<p class="no-data">Không tải được dữ liệu. Kiểm tra mạng hoặc sheet có public (Anyone with link).</p>';
       }
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(r => setTimeout(r, 1500));
     }
   }
 }
@@ -45,7 +46,7 @@ let debounceTimer;
 document.getElementById("search").addEventListener("input", e => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    const keyword = e.target.value.trim().toLowerCase();
+    const keyword = (e.target.value || "").trim().toLowerCase();
     if (!keyword) return render(allData);
 
     const filtered = allData.filter(row =>
@@ -62,7 +63,7 @@ function render(data) {
   tableEl.classList.remove("loading");
 
   if (!data.length) {
-    tableEl.innerHTML = '<p class="no-data">Không tìm thấy quán nào phù hợp 😔</p>';
+    tableEl.innerHTML = '<p class="no-data">Không tìm thấy quán phù hợp 😔</p>';
     return;
   }
 
@@ -78,9 +79,9 @@ function render(data) {
         
         ${row["Phân loại món"] ? `<span class="tag">${row["Phân loại món"]}</span>` : ""}
         
-        ${row["Tên món"] ? `<p><strong>Món nổi bật:</strong> ${row["Tên món"]}</p>` : ""}
+        ${row["Tên món"] ? `<p><strong>Món:</strong> ${row["Tên món"]}</p>` : ""}
         
-        ${row[Tên đường] ? `<p><strong>Địa chỉ:</strong> ${row[Tên đường]}</p>` : ""}
+        ${diaChi ? `<p><strong>Địa chỉ:</strong> ${diaChi}</p>` : ""}
         
         ${row["Giờ mở cửa"] ? `<p><strong>Giờ mở cửa:</strong> ${row["Giờ mở cửa"]}</p>` : ""}
         
