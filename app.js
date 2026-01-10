@@ -116,8 +116,8 @@ function render(data) {
         <h3>${row["Tên quán"] || "Không tên"}</h3>
         ${row["Quận"] ? `<span class="tag">${row["Quận"]}</span>` : ""}
 
-        ${row["Tên món"] ? `<p><b>Món:</b> ${row["Tên món"]}</p>` : ""}
-        ${row["Phân loại món"] ? `<p><b>Loại:</b> ${row["Phân loại món"]}</p>` : ""}
+        ${row["Tên món"] ? `<p><b>Tên món:</b> ${row["Tên món"]}</p>` : ""}
+        ${row["Phân loại món"] ? `<p><b>Phân loại món:</b> ${row["Phân loại món"]}</p>` : ""}
         ${row["Tên đường"] ? `<p><b>Đường:</b> ${row["Tên đường"]}</p>` : ""}
         ${row["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${row["Giờ mở cửa"]}</p>` : ""}
         ${row["Khoảng giá"] ? `<p><b>Giá:</b> ${row["Khoảng giá"]}</p>` : ""}
