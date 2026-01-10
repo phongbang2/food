@@ -32,8 +32,8 @@ function initDropdowns() {
     }
 
     // MÓN (có thể nhiều)
-    if (row["Món"]) {
-      row["Món"]
+    if (row["Tên món"]) {
+      row["Tên món"]
         .split(/,|-|\n/)   // tách theo , - hoặc xuống dòng
         .map(v => v.trim())
         .filter(Boolean)
@@ -41,8 +41,8 @@ function initDropdowns() {
     }
 
     // PHÂN LOẠI (có thể nhiều)
-    if (row["Phân loại"]) {
-      row["Phân loại"]
+    if (row["Phân loại món"]) {
+      row["Phân loại món"]
         .split(/,|-|\n/)
         .map(v => v.trim())
         .filter(Boolean)
