@@ -8,24 +8,33 @@ async function fetchData(retries = 3) {
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(sheetUrl);
+      const res = await fetch(sheetUrl, {
+        headers: { 'Accept': 'text/csv; charset=utf-8' }
+      });
       if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
-      const csvText = await res.text();
+
+      // Decode thủ công UTF-8 để tránh lỗi encoding
+      const buffer = await res.arrayBuffer();
+      const decoder = new TextDecoder('utf-8');
+      const csvText = decoder.decode(buffer);
+
       const parsed = Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        dynamicTyping: false // Giữ string để tránh convert số
+        transformHeader: h => h.trim(), // Trim header
+        transform: val => val.trim()    // Trim value
       });
-      allData = parsed.data;
+
+      allData = parsed.data.filter(row => row["Tên quán"]); // Lọc row rỗng
       render(allData);
       return;
     } catch (error) {
       console.error(`Attempt ${attempt} failed:`, error);
       if (attempt === retries) {
         tableEl.classList.remove("loading");
-        tableEl.innerHTML = '<p class="no-data">Không tải được dữ liệu. Vui lòng kiểm tra kết nối hoặc thử lại sau.</p>';
+        tableEl.innerHTML = '<p class="no-data">Không tải được dữ liệu. Kiểm tra kết nối hoặc sheet có public không.</p>';
       }
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Delay trước retry
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
   }
 }
@@ -37,37 +46,47 @@ document.getElementById("search").addEventListener("input", e => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     const keyword = e.target.value.trim().toLowerCase();
-    if (!keyword) {
-      render(allData);
-      return;
-    }
+    if (!keyword) return render(allData);
+
     const filtered = allData.filter(row =>
-      Object.values(row).some(val => 
-        val != null && String(val).toLowerCase().includes(keyword)
+      Object.values(row).some(val =>
+        val && String(val).toLowerCase().includes(keyword)
       )
     );
     render(filtered);
-  }, 300); // Debounce 300ms
+  }, 300);
 });
 
 function render(data) {
   const tableEl = document.getElementById("table");
   tableEl.classList.remove("loading");
 
-  if (!data || !data.length) {
-    tableEl.innerHTML = '<p class="no-data">Không có dữ liệu phù hợp</p>';
+  if (!data.length) {
+    tableEl.innerHTML = '<p class="no-data">Không tìm thấy quán nào phù hợp 😔</p>';
     return;
   }
 
   let html = '<div class="cards">';
   data.forEach(row => {
+    const tenDuong = row["Tên đường"] || "";
+    const quan = row["Quận"] || "";
+    const diaChi = [tenDuong, quan].filter(Boolean).join(", ");
+
     html += `
       <div class="card">
-        <h3>${row["Tên quán"] || "Không tên"}</h3>
-        ${row["Món"] ? `<p><b>Món:</b> ${row["Món"]}</p>` : ""}
-        ${row["Địa chỉ"] ? `<p><b>Địa chỉ:</b> ${row["Địa chỉ"]}</p>` : ""}
-        ${row["Quận"] ? `<p><b>Quận:</b> ${row["Quận"]}</p>` : ""}
-        ${row["Giờ mở"] ? `<p><b>Giờ mở:</b> ${row["Giờ mở"]}</p>` : ""}
+        <h3>🍴 ${row["Tên quán"] || "Không tên"}</h3>
+        
+        ${row["Phân loại món"] ? `<span class="tag">${row["Phân loại món"]}</span>` : ""}
+        
+        ${row["Tên món"] ? `<p><strong>Món nổi bật:</strong> ${row["Tên món"]}</p>` : ""}
+        
+        ${diaChi ? `<p><strong>Địa chỉ:</strong> ${diaChi}</p>` : ""}
+        
+        ${row["Giờ mở cửa"] ? `<p><strong>Giờ mở cửa:</strong> ${row["Giờ mở cửa"]}</p>` : ""}
+        
+        ${row["Khoảng giá"] ? `<p><strong>Khoảng giá:</strong> ${row["Khoảng giá"]}</p>` : ""}
+        
+        ${row["Note"] ? `<p class="note"><strong>Ghi chú:</strong> ${row["Note"]}</p>` : ""}
       </div>
     `;
   });
