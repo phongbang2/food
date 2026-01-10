@@ -81,7 +81,32 @@ function filterData() {
 
   const result = document.getElementById("result");
 
-  if (!food && !district && !type) {
+  let filtered = [...allData];
+
+  // 1️⃣ Ưu tiên QUẬN trước
+  if (district) {
+    filtered = filtered.filter(row =>
+      row["Quận"] && row["Quận"] === district
+    );
+  }
+
+  // 2️⃣ Sau đó lọc theo PHÂN LOẠI
+  if (type) {
+    filtered = filtered.filter(row =>
+      row["Phân loại món"] &&
+      row["Phân loại món"].toLowerCase().includes(type.toLowerCase())
+    );
+  }
+
+  // 3️⃣ Cuối cùng lọc theo TÊN MÓN
+  if (food) {
+    filtered = filtered.filter(row =>
+      row["Tên món"] &&
+      row["Tên món"].toLowerCase().includes(food.toLowerCase())
+    );
+  }
+
+  if (!district && !food && !type) {
     result.innerHTML = `
       <div class="hint">
         Chọn ít nhất <b>1 điều kiện</b> để hiển thị kết quả
@@ -89,15 +114,9 @@ function filterData() {
     return;
   }
 
-  const filtered = allData.filter(row => {
-    if (food && row["Món"] !== food) return false;
-    if (district && row["Quận"] !== district) return false;
-    if (type && row["Phân loại"] !== type) return false;
-    return true;
-  });
-
   render(filtered);
 }
+
 
 // Render card
 function render(data) {
