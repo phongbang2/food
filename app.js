@@ -1,96 +1,64 @@
 let allData = [];
-const sheetUrl = "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vzjufjPwGyXqxsU5kzA2R-8/export?format=csv&gid=0";
 
-async function fetchData(retries = 3) {
-  const tableEl = document.getElementById("table");
-  tableEl.classList.add("loading");
-  tableEl.innerHTML = "Đang tải dữ liệu... Vui lòng chờ...";
+// 🔗 LINK CSV GOOGLE SHEETS (PUBLIC)
+const sheetUrl =
+  "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vzjufjPwGyXqxsU5kzA2R-8/export?format=csv&gid=0";
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(sheetUrl, {
-        headers: { 'Accept': 'text/csv; charset=utf-8' }
-      });
-      if (!res.ok) throw new Error(`Lỗi tải: ${res.status}`);
+// Load data
+fetch(sheetUrl)
+  .then(res => res.text())
+  .then(csvText => {
+    const parsed = Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true
+    });
 
-      const buffer = await res.arrayBuffer();
-      const decoder = new TextDecoder('utf-8');
-      const csvText = decoder.decode(buffer);
+    allData = parsed.data;
+    render(allData);
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById("table").innerText =
+      "Không tải được dữ liệu";
+  });
 
-      const parsed = Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: h => h.trim().normalize("NFC"), // Normalize accents
-        transform: val => (val || "").trim(),
-        delimiter: ",", // Default nhưng đảm bảo
-        quoteChar: '"'
-      });
-
-      allData = parsed.data.filter(row => row["Tên quán"] && row["Tên quán"].trim());
-      render(allData);
-      return;
-    } catch (error) {
-      console.error(`Thử ${attempt} thất bại:`, error);
-      if (attempt === retries) {
-        tableEl.classList.remove("loading");
-        tableEl.innerHTML = '<p class="no-data">Không tải được dữ liệu. Kiểm tra mạng hoặc sheet có public (Anyone with link).</p>';
-      }
-      await new Promise(r => setTimeout(r, 1500));
-    }
-  }
-}
-
-fetchData();
-
-let debounceTimer;
+// Search
 document.getElementById("search").addEventListener("input", e => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    const keyword = (e.target.value || "").trim().toLowerCase();
-    if (!keyword) return render(allData);
+  const keyword = e.target.value.toLowerCase();
 
-    const filtered = allData.filter(row =>
-      Object.values(row).some(val =>
-        val && String(val).toLowerCase().includes(keyword)
-      )
-    );
-    render(filtered);
-  }, 300);
+  const filtered = allData.filter(row =>
+    Object.values(row).some(val =>
+      String(val).toLowerCase().includes(keyword)
+    )
+  );
+
+  render(filtered);
 });
 
+// Render cards
 function render(data) {
-  const tableEl = document.getElementById("table");
-  tableEl.classList.remove("loading");
+  const container = document.getElementById("table");
 
   if (!data.length) {
-    tableEl.innerHTML = '<p class="no-data">Không tìm thấy quán phù hợp 😔</p>';
+    container.innerHTML = "<p>Không có dữ liệu</p>";
     return;
   }
 
   let html = '<div class="cards">';
-  data.forEach(row => {
-    const tenDuong = row["Tên đường"] || "";
-    const quan = row["Quận"] || "";
-    const diaChi = [tenDuong, quan].filter(Boolean).join(", ");
 
+  data.forEach(row => {
     html += `
       <div class="card">
-        <h3>🍴 ${row["Tên quán"] || "Không tên"}</h3>
-        
-        ${row["Phân loại món"] ? `<span class="tag">${row["Phân loại món"]}</span>` : ""}
-        
-        ${row["Tên món"] ? `<p><strong>Món:</strong> ${row["Tên món"]}</p>` : ""}
-        
-        ${diaChi ? `<p><strong>Địa chỉ:</strong> ${diaChi}</p>` : ""}
-        
-        ${row["Giờ mở cửa"] ? `<p><strong>Giờ mở cửa:</strong> ${row["Giờ mở cửa"]}</p>` : ""}
-        
-        ${row["Khoảng giá"] ? `<p><strong>Khoảng giá:</strong> ${row["Khoảng giá"]}</p>` : ""}
-        
-        ${row["Note"] ? `<p class="note"><strong>Ghi chú:</strong> ${row["Note"]}</p>` : ""}
+        <h3>${row["Tên quán"] || "Không tên"}</h3>
+
+        ${row["Món"] ? `<p><b>Món:</b> ${row["Món"]}</p>` : ""}
+        ${row["Địa chỉ"] ? `<p><b>Địa chỉ:</b> ${row["Địa chỉ"]}</p>` : ""}
+        ${row["Quận"] ? `<p><b>Quận:</b> ${row["Quận"]}</p>` : ""}
+        ${row["Giờ mở"] ? `<p><b>Giờ mở:</b> ${row["Giờ mở"]}</p>` : ""}
       </div>
     `;
   });
+
   html += "</div>";
-  tableEl.innerHTML = html;
+  container.innerHTML = html;
 }
