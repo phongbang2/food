@@ -26,15 +26,35 @@ function initDropdowns() {
   const typeSet = new Set();
 
   allData.forEach(row => {
-    if (row["Món"]) foodSet.add(row["Món"]);
-    if (row["Quận"]) districtSet.add(row["Quận"]);
-    if (row["Phân loại"]) typeSet.add(row["Phân loại"]);
+    // QUẬN (đơn)
+    if (row["Quận"]) {
+      districtSet.add(row["Quận"].trim());
+    }
+
+    // MÓN (có thể nhiều)
+    if (row["Món"]) {
+      row["Món"]
+        .split(/,|-|\n/)   // tách theo , - hoặc xuống dòng
+        .map(v => v.trim())
+        .filter(Boolean)
+        .forEach(v => foodSet.add(v));
+    }
+
+    // PHÂN LOẠI (có thể nhiều)
+    if (row["Phân loại"]) {
+      row["Phân loại"]
+        .split(/,|-|\n/)
+        .map(v => v.trim())
+        .filter(Boolean)
+        .forEach(v => typeSet.add(v));
+    }
   });
 
   fillSelect("foodSelect", [...foodSet]);
   fillSelect("districtSelect", [...districtSet]);
   fillSelect("typeSelect", [...typeSet]);
 }
+
 
 function fillSelect(id, items) {
   const select = document.getElementById(id);
