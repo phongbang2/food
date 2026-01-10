@@ -41,10 +41,11 @@ function render(data) {
     html += `
       <div class="card">
         <h3>${row["Tên quán"] || "Không tên"}</h3>
-        <p><b>Món:</b> ${row["Món"] || ""}</p>
-        <p><b>Địa chỉ:</b> ${row["Địa chỉ"] || ""}</p>
-        <p><b>Quận:</b> ${row["Quận"] || ""}</p>
-        <p><b>Giờ mở:</b> ${row["Giờ mở"] || ""}</p>
+
+        ${row["Món"] ? `<p><b>Món:</b> ${row["Món"]}</p>` : ""}
+        ${row["Địa chỉ"] ? `<p><b>Địa chỉ:</b> ${row["Địa chỉ"]}</p>` : ""}
+        ${row["Quận"] ? `<p><b>Quận:</b> ${row["Quận"]}</p>` : ""}
+        ${row["Giờ mở"] ? `<p><b>Giờ mở:</b> ${row["Giờ mở"]}</p>` : ""}
       </div>
     `;
   });
@@ -52,3 +53,4 @@ function render(data) {
   html += "</div>";
   document.getElementById("table").innerHTML = html;
 }
+
