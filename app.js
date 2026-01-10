@@ -1,10 +1,9 @@
 let allData = [];
 
-// 🔗 LINK CSV GOOGLE SHEETS (PUBLIC)
 const sheetUrl =
   "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vzjufjPwGyXqxsU5kzA2R-8/export?format=csv&gid=0";
 
-// Load data
+// Load Google Sheets
 fetch(sheetUrl)
   .then(res => res.text())
   .then(csvText => {
@@ -35,7 +34,7 @@ document.getElementById("search").addEventListener("input", e => {
   render(filtered);
 });
 
-// Render cards
+// Render cards (DYNAMIC COLUMNS)
 function render(data) {
   const container = document.getElementById("table");
 
@@ -47,16 +46,22 @@ function render(data) {
   let html = '<div class="cards">';
 
   data.forEach(row => {
-    html += `
-      <div class="card">
-        <h3>${row["Tên quán"] || "Không tên"}</h3>
+    html += `<div class="card">`;
 
-        ${row["Món"] ? `<p><b>Món:</b> ${row["Món"]}</p>` : ""}
-        ${row["Tên đường"] ? `<p><b>Tên đường:</b> ${row["Tên đường"]}</p>` : ""}
-        ${row["Quận"] ? `<p><b>Quận:</b> ${row["Quận"]}</p>` : ""}
-        ${row["Giờ mở cửa"] ? `<p><b>Giờ mở cửa:</b> ${row["Giờ mở cửa"]}</p>` : ""}
-      </div>
-    `;
+    // 👉 Tên quán làm tiêu đề
+    html += `<h3>${row["Tên quán"] || "Không tên"}</h3>`;
+
+    // 👉 Render tất cả cột còn lại
+    Object.keys(row).forEach(key => {
+      if (key === "Tên quán") return;
+
+      const value = row[key];
+      if (!value) return;
+
+      html += `<p><b>${key}:</b> ${value}</p>`;
+    });
+
+    html += `</div>`;
   });
 
   html += "</div>";
