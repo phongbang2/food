@@ -12,39 +12,67 @@ fetch(sheetUrl)
       header: true,
       skipEmptyLines: true
     });
+
     allData = parsed.data;
     loaded = true;
+
+    initDropdowns();
   });
 
-// Listen input
-["foodInput", "districtInput", "typeInput"].forEach(id => {
-  document.getElementById(id).addEventListener("input", filterData);
+// Init dropdown từ data
+function initDropdowns() {
+  const foodSet = new Set();
+  const districtSet = new Set();
+  const typeSet = new Set();
+
+  allData.forEach(row => {
+    if (row["Món"]) foodSet.add(row["Món"]);
+    if (row["Quận"]) districtSet.add(row["Quận"]);
+    if (row["Phân loại"]) typeSet.add(row["Phân loại"]);
+  });
+
+  fillSelect("foodSelect", [...foodSet]);
+  fillSelect("districtSelect", [...districtSet]);
+  fillSelect("typeSelect", [...typeSet]);
+}
+
+function fillSelect(id, items) {
+  const select = document.getElementById(id);
+  items.sort().forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+}
+
+// Listen change
+["foodSelect", "districtSelect", "typeSelect"].forEach(id => {
+  document.getElementById(id).addEventListener("change", filterData);
 });
 
+// Filter logic
 function filterData() {
-  const food = document.getElementById("foodInput").value.trim().toLowerCase();
-  const district = document.getElementById("districtInput").value.trim().toLowerCase();
-  const type = document.getElementById("typeInput").value.trim().toLowerCase();
+  if (!loaded) return;
+
+  const food = document.getElementById("foodSelect").value;
+  const district = document.getElementById("districtSelect").value;
+  const type = document.getElementById("typeSelect").value;
 
   const result = document.getElementById("result");
 
   if (!food && !district && !type) {
     result.innerHTML = `
       <div class="hint">
-        Nhập ít nhất <b>1 ô</b> để bắt đầu tìm
+        Chọn ít nhất <b>1 điều kiện</b> để hiển thị kết quả
       </div>`;
     return;
   }
 
-  if (!loaded) {
-    result.innerHTML = `<div class="hint">Đang tải dữ liệu...</div>`;
-    return;
-  }
-
   const filtered = allData.filter(row => {
-    if (food && !String(row["Món"] || "").toLowerCase().includes(food)) return false;
-    if (district && !String(row["Quận"] || "").toLowerCase().includes(district)) return false;
-    if (type && !String(row["Phân loại"] || "").toLowerCase().includes(type)) return false;
+    if (food && row["Món"] !== food) return false;
+    if (district && row["Quận"] !== district) return false;
+    if (type && row["Phân loại"] !== type) return false;
     return true;
   });
 
