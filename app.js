@@ -1,20 +1,24 @@
 let allData = [];
 
-document.getElementById('file').addEventListener('change', e => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
+// link CSV public
+const sheetUrl = "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vzjufjPwGyXqxsU5kzA2R-8/export?format=csv&gid=0";
 
-  reader.onload = evt => {
-    const wb = XLSX.read(evt.target.result, { type: 'binary' });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    allData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+fetch(sheetUrl)
+  .then(res => res.text())
+  .then(csvText => {
+    const data = Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: true
+    });
+    allData = data.data;
     render(allData);
-  };
+  })
+  .catch(err => {
+    console.error("Lỗi đọc Google Sheets:", err);
+    document.getElementById("table").innerText = "Không tải được dữ liệu Google Sheets!";
+  });
 
-  reader.readAsBinaryString(file);
-});
-
-document.getElementById('search').addEventListener('input', e => {
+document.getElementById("search").addEventListener("input", e => {
   const keyword = e.target.value.toLowerCase();
   const filtered = allData.filter(row =>
     Object.values(row).some(val =>
@@ -26,7 +30,7 @@ document.getElementById('search').addEventListener('input', e => {
 
 function render(data) {
   if (!data.length) {
-    document.getElementById('table').innerHTML = 'Không có dữ liệu';
+    document.getElementById("table").innerHTML = "Không có dữ liệu";
     return;
   }
 
@@ -34,14 +38,14 @@ function render(data) {
 
   let html = '<table border="1" cellpadding="6"><tr>';
   headers.forEach(h => html += `<th>${h}</th>`);
-  html += '</tr>';
+  html += "</tr>";
 
   data.forEach(row => {
-    html += '<tr>';
-    headers.forEach(h => html += `<td>${row[h]}</td>`);
-    html += '</tr>';
+    html += "<tr>";
+    headers.forEach(h => html += `<td>${row[h] || ""}</td>`);
+    html += "</tr>";
   });
 
-  html += '</table>';
-  document.getElementById('table').innerHTML = html;
+  html += "</table>";
+  document.getElementById("table").innerHTML = html;
 }
