@@ -156,11 +156,6 @@ function render(data) {
   let html = `<div class="cards">`;
 
   data.forEach(r => {
-    const address = row["Tên đường"] || "";
-    const mapUrl = address
-              ? "https://www.google.com/maps/search/?api=1&query=" +
-              encodeURIComponent(address)
-              : "";
     html += `
       <div class="card">
         <h3>${r["Tên quán"] || "Không tên"}</h3>
