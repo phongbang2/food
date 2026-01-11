@@ -8,7 +8,7 @@ let loaded = false;
 // GOOGLE SHEET CSV
 // ================================
 const sheetUrl =
-  "https://docs.google.com/spreadsheets/d/1uJk8tFBuAJDHo8XD7J69vzjufjPwGyXqxsU5kzA2R-8/export?format=csv&gid=0";
+  "https://docs.google.com/spreadsheets/d/1LHQlScoOABMay4-faE4ECdX7LlcPaDQzlDJFYqKmiZ8/export?format=csv&gid=0";
 
 // ================================
 // LOAD DATA
