@@ -156,7 +156,7 @@ function render(data) {
   let html = `<div class="cards">`;
 
   data.forEach(r => {
-    const address = row["Tên đường"] || "";
+    const address = r["Tên đường"] || "";
     const mapUrl = address
           ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(address)
     : "";
