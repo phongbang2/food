@@ -121,3 +121,14 @@ select:disabled {
     transform: translateY(0);
   }
 }
+.address {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.address:hover {
+  text-decoration: underline;
+}
+
