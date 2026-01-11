@@ -173,3 +173,12 @@ function render(data) {
   html += `</div>`;
   result.innerHTML = html;
 }
+function onDistrictChange() {
+  document.getElementById("foodSelect").disabled = false;
+  document.getElementById("typeSelect").disabled = false;
+  filterData();
+}
+
+document
+  .getElementById("districtSelect")
+  .addEventListener("change", onDistrictChange);
