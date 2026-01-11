@@ -1,108 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Food Finder</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
-      background: #f2f2f7;
-    }
-
-    .app {
-      max-width: 520px;
-      margin: auto;
-      padding: 16px;
-    }
-
-    h1 {
-      font-size: 22px;
-      margin-bottom: 6px;
-    }
-
-    .sub {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
-
-    .filters {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    select {
-      padding: 14px;
-      font-size: 16px;
-      border-radius: 14px;
-      border: none;
-      background: white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    select:disabled {
-      background: #eee;
-      color: #999;
-    }
-
-    .hint {
-      text-align: center;
-      color: #777;
-      margin-top: 24px;
-      font-size: 14px;
-    }
-
-    .cards {
-      margin-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    }
-
-    .card h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
-    }
-
-    .tag {
-      display: inline-block;
-      background: #eef0ff;
-      color: #3b4cca;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      margin-bottom: 6px;
-    }
-
-    .note {
-      background: #fff7d6;
-      padding: 8px;
-      border-radius: 10px;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-  <div class="app">
-    <h1>🍜 Food Finder</h1>
-    <div class="sub">Chọn quận trước, sau đó lọc món & phân loại</div>
 
-    <div class="filters">
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <h1>🍜 Food Finder</h1>
+      <p>Chọn quận trước, sau đó lọc món & phân loại</p>
+    </header>
+
+    <!-- SEARCH -->
+    <section class="search">
       <select id="districtSelect">
         <option value="">📍 Chọn quận</option>
       </select>
@@ -114,11 +33,15 @@
       <select id="typeSelect" disabled>
         <option value="">🏷️ Chọn phân loại</option>
       </select>
-    </div>
+    </section>
 
-    <div id="result">
-      <div class="hint">Vui lòng chọn <b>Quận</b> trước</div>
-    </div>
+    <!-- RESULT -->
+    <section id="result">
+      <div class="hint">
+        👆 Hãy chọn <b>Quận</b> để bắt đầu tìm quán ăn
+      </div>
+    </section>
+
   </div>
 
   <script src="app.js"></script>
