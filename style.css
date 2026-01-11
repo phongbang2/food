@@ -109,6 +109,20 @@ select:disabled {
   border-radius: 8px;
   font-size: 13px;
 }
+.address a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.address a:active {
+  opacity: 0.6;
+}
+
+.address a:hover {
+  text-decoration: underline;
+}
+
 
 /* ANIMATION */
 @keyframes fadeUp {
@@ -120,15 +134,5 @@ select:disabled {
     opacity: 1;
     transform: translateY(0);
   }
-}
-.address {
-  margin: 6px 0;
-  font-size: 14px;
-  color: #2563eb;
-  cursor: pointer;
-}
-
-.address:hover {
-  text-decoration: underline;
 }
 
