@@ -162,7 +162,14 @@ function render(data) {
         <span class="tag">${r["Quận"]}</span>
         ${r["Tên món"] ? `<p><b>Món:</b> ${r["Tên món"]}</p>` : ""}
         ${r["Phân loại món"] ? `<p><b>Loại:</b> ${r["Phân loại món"]}</p>` : ""}
-        ${r["Tên đường"] ? `<p><b>Đường:</b> ${r["Tên đường"]}</p>` : ""}
+        ${row["Tên đường"] ? `
+          <p class="address"
+             onclick="openMap('${encodeURIComponent(
+             row["Tên đường"] + ', ' + (row["Quận"] || '')
+             )}')">
+             ${row["Tên đường"]}
+          </p>
+`       : ""}
         ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
         ${r["Khoảng giá"] ? `<p><b>Giá:</b> ${r["Khoảng giá"]}</p>` : ""}
         ${r["Note"] ? `<p><b>Note:</b> ${r["Note"]}</p>` : ""}
@@ -172,6 +179,15 @@ function render(data) {
 
   html += `</div>`;
   result.innerHTML = html;
+}
+function openMap(address) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const url = isMobile
+    ? `https://www.google.com/maps/search/?api=1&query=${address}`
+    : `https://www.google.com/maps?q=${address}`;
+
+  window.open(url, "_blank");
 }
 function onDistrictChange() {
   document.getElementById("foodSelect").disabled = false;
