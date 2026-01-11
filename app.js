@@ -165,7 +165,7 @@ function render(data) {
         ${r["Tên đường"] ? `<p><b>Đường:</b> ${r["Tên đường"]}</p>` : ""}
         ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
         ${r["Khoảng giá"] ? `<p><b>Giá:</b> ${r["Khoảng giá"]}</p>` : ""}
-        ${r["noted"] ? `<div class="note">${r["noted"]}</div>` : ""}
+        ${r["note"] ? `<div class="note">${r["note"]}</div>` : ""}
       </div>
     `;
   });
