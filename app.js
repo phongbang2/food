@@ -9,7 +9,6 @@ let loaded = false;
 // ================================
 const sheetUrl =
   "https://docs.google.com/spreadsheets/d/1LHQlScoOABMay4-faE4ECdX7LlcPaDQzlDJFYqKmiZ8/export?format=csv&gid=0";
-
 // ================================
 // LOAD DATA
 // ================================
