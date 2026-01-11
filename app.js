@@ -163,19 +163,6 @@ function render(data) {
         ${r["Tên món"] ? `<p><b>Món:</b> ${r["Tên món"]}</p>` : ""}
         ${r["Phân loại món"] ? `<p><b>Loại:</b> ${r["Phân loại món"]}</p>` : ""}
         ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
-        ${row["Tên đường"] ? `
-          <p class="address">
-            📍 <a
-                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                row["Tên đường"] + ", " + (row["Quận"] || "")
-                )}"
-                target="_blank"
-                rel="noopener noreferrer"
-                >
-                ${row["Tên đường"]}
-            </a>
-          </p>
-        ` : ""}
         ${r["Khoảng giá"] ? `<p><b>Giá:</b> ${r["Khoảng giá"]}</p>` : ""}
         ${r["Note"] ? `<p><b>Note:</b> ${r["Note"]}</p>` : ""}
       </div>
