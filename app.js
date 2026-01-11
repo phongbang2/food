@@ -167,7 +167,7 @@ function render(data) {
              onclick="openMap('${encodeURIComponent(
              row["Tên đường"] + ', ' + (row["Quận"] || '')
              )}')">
-             ${row["Tên đường"]}
+            📍 ${row["Tên đường"]}
           </p>
 `       : ""}
         ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
