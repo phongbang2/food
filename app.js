@@ -168,7 +168,6 @@ function render(data) {
         ${r["Tên món"] ? `<p><b>Món:</b> ${r["Tên món"]}</p>` : ""}
         ${r["Phân loại món"] ? `<p><b>Loại:</b> ${r["Phân loại món"]}</p>` : ""}
         ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
-        ${address ? `<p class="address">📍 <a href="${mapUrl}" target="_blank" rel="noopener noreferrer">${address} </a></p>` : ""}
         ${r["Khoảng giá"] ? `<p><b>Giá:</b> ${r["Khoảng giá"]}</p>` : ""}
         ${r["Note"] ? `<p><b>Note:</b> ${r["Note"]}</p>` : ""}
       </div> `;
