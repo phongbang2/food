@@ -3,212 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ăn Sập Sài Gòn - Tìm Quán Ngon Mỗi Ngày 🍜🔥</title>
+  <title>Food | Bộ sưu tập món ngon</title>
+  
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#f97316"/>
+  <link rel="icon" href="/icons/512.png" type="image/png"/>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   
-  <!-- Font Awesome cho icon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #fff3e6 0%, #ffe8d6 100%);
-      color: #2d2d2d;
-      min-height: 100vh;
-      background-attachment: fixed;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-
-    header {
-      text-align: center;
-      padding: 4rem 1rem 3rem;
-      background: linear-gradient(to right, #ff6b6b, #ff8e53);
-      color: white;
-      border-radius: 0 0 2.5rem 2.5rem;
-      box-shadow: 0 10px 30px rgba(255, 107, 107, 0.25);
-      position: relative;
-      overflow: hidden;
-    }
-
-    header::before {
-      content: '🍜🔥🍔';
-      position: absolute;
-      font-size: 8rem;
-      opacity: 0.15;
-      top: -2rem;
-      left: -4rem;
-      transform: rotate(-15deg);
-    }
-
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-    }
-
-    .subtitle {
-      font-size: 1.3rem;
-      opacity: 0.95;
-      margin: 1rem 0 2rem;
-    }
-
-    .intro {
-      font-size: 1.15rem;
-      max-width: 680px;
-      margin: 0 auto 2.5rem;
-      line-height: 1.6;
-    }
-
-    .district-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.8rem;
-      margin-top: 2rem;
-    }
-
-    .district-card {
-      background: white;
-      border-radius: 1.2rem;
-      overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-      transition: all 0.35s ease;
-      position: relative;
-      text-decoration: none;
-      color: inherit;
-      display: block;
-    }
-
-    .district-card:hover {
-      transform: translateY(-12px);
-      box-shadow: 0 20px 40px rgba(255, 107, 107, 0.25);
-    }
-
-    .district-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,107,107,0.35));
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-
-    .district-card:hover::before {
-      opacity: 1;
-    }
-
-    .card-content {
-      padding: 2.2rem 1.5rem;
-      text-align: center;
-    }
-
-    .district-name {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #e63946;
-      margin-bottom: 0.8rem;
-    }
-
-    .district-count {
-      font-size: 0.95rem;
-      color: #666;
-      margin-top: 0.5rem;
-    }
-
-    .icon {
-      font-size: 3.2rem;
-      margin-bottom: 1rem;
-      color: #ff6b6b;
-    }
-
-    footer {
-      text-align: center;
-      padding: 3rem 1rem 2rem;
-      color: #666;
-      font-size: 0.95rem;
-      margin-top: 4rem;
-    }
-
-    @media (max-width: 576px) {
-      header {
-        padding: 3.5rem 1rem 2.5rem;
-      }
-      h1 {
-        font-size: 2.8rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
-  <header>
+  <header class="header">
     <div class="container">
-      <h1>Ăn Sập Sài Gòn</h1>
-      <p class="subtitle">Khám phá hàng ngàn quán ngon - từ vỉa hè đến sang chảnh</p>
-      
-      <p class="intro">
-        Chọn quận bạn đang muốn "sập" trước, sau đó tha hồ lọc món, loại hình, giá cả nhé!
-      </p>
+      <h1>Food</h1>
+      <p>Bộ sưu tập những món ăn ngon khiến bạn phải thử!</p>
     </div>
   </header>
 
-  <div class="container">
-    <div class="district-grid">
-      <!-- Bạn có thể thêm link thật khi đã có trang chi tiết quận -->
-      <a href="#" class="district-card">
-        <div class="card-content">
-          <div class="icon"><i class="fas fa-city"></i></div>
-          <div class="district-name">Quận 1</div>
-          <div class="district-count">Hơn 380+ quán xịn</div>
-        </div>
-      </a>
-
-      <a href="#" class="district-card">
-        <div class="card-content">
-          <div class="icon"><i class="fas fa-city"></i></div>
-          <div class="district-name">Quận 3</div>
-          <div class="district-count">~240+ địa chỉ ngon</div>
-        </div>
-      </a>
-
-      <a href="#" class="district-card">
-        <div class="card-content">
-          <div class="icon"><i class="fas fa-city"></i></div>
-          <div class="district-name">Quận 7</div>
-          <div class="district-count">~180+ quán chất</div>
-        </div>
-      </a>
-
-      <a href="#" class="district-card">
-        <div class="card-content">
-          <div class="icon"><i class="fas fa-city"></i></div>
-          <div class="district-name">Bình Thạnh</div>
-          <div class="district-count">~210+ chỗ chill</div>
-        </div>
-      </a>
-
-      <!-- Thêm các quận khác tương tự khi cần -->
+  <main class="container">
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Tìm món ăn... (tên, nguyên liệu, loại)" autocomplete="off"/>
     </div>
-  </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="mon-an-viet">Món Việt</button>
+      <button class="filter-btn" data-filter="mon-an-tay">Món Tây</button>
+      <button class="filter-btn" data-filter="trang-mieng">Tráng miệng</button>
+      <button class="filter-btn" data-filter="do-uong">Đồ uống</button>
+    </div>
+
+    <!-- Danh sách món ăn sẽ được render bởi app.js -->
+    <div class="food-grid" id="food-container">
+      <!-- app.js sẽ chèn các .food-card vào đây -->
+      <div class="loading">Đang tải danh sách món ngon...</div>
+    </div>
+  </main>
 
   <footer>
-    <p>© 2026 Ăn Sập Sài Gòn • Dự án cá nhân • Made with ❤️ & rất nhiều đồ ăn</p>
+    <p>© 2026 — Food Collection • Made with ❤️ in Việt Nam</p>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
