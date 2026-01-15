@@ -166,7 +166,6 @@ function render(data) {
     html += `
       <div class="result-item">
         <h3>${r["Tên quán"] || "Quán ngon ẩn danh"}</h3>
-        <p><strong>Quận:</strong> ${r["Quận"]}</p>
         ${r["Tên món"] ? `<p><strong>Món:</strong> ${r["Tên món"]}</p>` : ""}
         ${r["Phân loại món"] ? `<p><strong>Loại:</strong> ${r["Phân loại món"]}</p>` : ""}
         ${r["Giờ mở cửa"] ? `<p><strong>Giờ mở:</strong> ${r["Giờ mở cửa"]}</p>` : ""}
