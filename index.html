@@ -3,59 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food Vibes • Món Ngon Mỗi Ngày</title>
+  <title>Ăn Sập Sài Gòn • Món Ngon Theo Quận</title>
   
-  <!-- PWA giữ nguyên -->
+  <!-- PWA -->
   <link rel="manifest" href="/manifest.json"/>
   <meta name="theme-color" content="#ff6b35"/>
-  <link rel="icon" href="/icons/512.png" type="image/png"/>
   
-  <!-- Font đẹp + hiện đại -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css"/>
+  
+  <!-- PapaParse cho CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
   <header class="hero">
     <div class="hero-content">
-      <h1>Food Vibes</h1>
-      <p>Khám phá những món ăn khiến bạn "nghiện" từ cái nhìn đầu tiên 🍜🔥</p>
+      <h1>Ăn Sập Sài Gòn</h1>
+      <p>Chọn quận → khám phá món ngon quanh bạn 🔥🍜</p>
     </div>
   </header>
 
   <main class="container">
-    <section class="search-filter">
-      <div class="search-wrapper">
-        <input type="text" id="search" placeholder="Tìm món yêu thích... (phở, sushi, trà sữa...)" />
-        <span class="search-icon">🔍</span>
+    <section class="filters">
+      <div class="select-group">
+        <label for="districtSelect">Chọn Quận:</label>
+        <select id="districtSelect">
+          <option value="">-- Chọn quận --</option>
+        </select>
       </div>
 
-      <div class="filter-tags">
-        <button class="tag active" data-filter="all">Tất cả</button>
-        <button class="tag" data-filter="viet">Món Việt</button>
-        <button class="tag" data-filter="asian">Món Á</button>
-        <button class="tag" data-filter="western">Món Tây</button>
-        <button class="tag" data-filter="dessert">Tráng miệng</button>
-        <button class="tag" data-filter="drink">Đồ uống</button>
+      <div class="select-group">
+        <label for="foodSelect">Món ăn:</label>
+        <select id="foodSelect" disabled>
+          <option value="">-- Chọn món --</option>
+        </select>
+      </div>
+
+      <div class="select-group">
+        <label for="typeSelect">Phân loại:</label>
+        <select id="typeSelect" disabled>
+          <option value="">-- Chọn loại --</option>
+        </select>
       </div>
     </section>
 
-    <section class="food-gallery" id="food-container">
-      <!-- app.js sẽ render các card vào đây -->
+    <section class="food-gallery" id="result">
       <div class="loading-spinner">
         <div class="spinner"></div>
-        <p>Đang chuẩn bị những món ngon nhất...</p>
+        <p>Vui lòng chọn quận để xem món ngon...</p>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>Made with ❤️ by Phong • © 2026 Food Vibes</p>
+    <p>© 2026 — Ăn Sập Sài Gòn • Made with ❤️</p>
   </footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
