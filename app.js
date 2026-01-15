@@ -149,37 +149,34 @@ function render(data) {
   const result = document.getElementById("result");
 
   if (!data.length) {
-    result.innerHTML = `<div class="hint">Không có kết quả phù hợp</div>`;
+    result.innerHTML = `
+      <div class="no-result">
+        <p>Không tìm thấy món nào phù hợp 😔</p>
+        <small>Thử chọn quận/món khác nhé!</small>
+      </div>
+    `;
     return;
   }
 
-  let html = `<div class="cards">`;
-
+  let html = '';
   data.forEach(r => {
     const address = r["Tên đường"] || "";
-    const mapUrl = address
-          ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(address)
-    : "";
+    const mapUrl = address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address + ', ' + r["Quận"])}` : "";
+
     html += `
-      <div class="card">
-        <h3>${r["Tên quán"] || "Không tên"}</h3>
-        <span class="tag">${r["Quận"]}</span>
-        ${r["Tên món"] ? `<p><b>Món:</b> ${r["Tên món"]}</p>` : ""}
-        ${r["Phân loại món"] ? `<p><b>Loại:</b> ${r["Phân loại món"]}</p>` : ""}
-        ${r["Giờ mở cửa"] ? `<p><b>Giờ:</b> ${r["Giờ mở cửa"]}</p>` : ""}
-        ${address ? `
-          <p class="address">
-        📍 <a href="${mapUrl}" target="_blank" rel="noopener noreferrer">
-      ${address}
-    </a>
-  </p>
-` : ""}
-        ${r["Khoảng giá"] ? `<p><b>Giá:</b> ${r["Khoảng giá"]}</p>` : ""}
-        ${r["Note"] ? `<p><b>Note:</b> ${r["Note"]}</p>` : ""}
-      </div> `;
+      <div class="result-item">
+        <h3>${r["Tên quán"] || "Quán ngon ẩn danh"}</h3>
+        <p><strong>Quận:</strong> ${r["Quận"]}</p>
+        ${r["Tên món"] ? `<p><strong>Món:</strong> ${r["Tên món"]}</p>` : ""}
+        ${r["Phân loại món"] ? `<p><strong>Loại:</strong> ${r["Phân loại món"]}</p>` : ""}
+        ${r["Giờ mở cửa"] ? `<p><strong>Giờ mở:</strong> ${r["Giờ mở cửa"]}</p>` : ""}
+        ${address ? `<p>📍 <a href="${mapUrl}" target="_blank">${address}</a></p>` : ""}
+        ${r["Khoảng giá"] ? `<p><strong>Giá khoảng:</strong> ${r["Khoảng giá"]}</p>` : ""}
+        ${r["Note"] ? `<p><strong>Ghi chú:</strong> ${r["Note"]}</p>` : ""}
+      </div>
+    `;
   });
 
-  html += `</div>`;
   result.innerHTML = html;
 }
 function onDistrictChange() {
