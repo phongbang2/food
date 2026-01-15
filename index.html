@@ -34,19 +34,27 @@
         <select id="districtSelect">
           <option value="">-- Chọn quận --</option>
         </select>
+      </div>
+
+      <div class="select-group">
+        <label for="foodSelect">Món ăn:</label>
         <select id="foodSelect" disabled>
           <option value="">-- Chọn món --</option>
         </select>
+      </div>
+
+      <div class="select-group">
+        <label for="typeSelect">Phân loại:</label>
         <select id="typeSelect" disabled>
           <option value="">-- Chọn loại --</option>
         </select>
       </div>
     </section>
 
-    <section class="food-grid" id="result">
-      <div class="loading-spinner active">
+    <section class="food-gallery" id="result">
+      <div class="loading-spinner">
         <div class="spinner"></div>
-        <p>Đang tải dữ liệu...</p>
+        <p>Vui lòng chọn quận để xem món ngon...</p>
       </div>
     </section>
   </main>
