@@ -34,27 +34,19 @@
         <select id="districtSelect">
           <option value="">-- Chọn quận --</option>
         </select>
-      </div>
-
-      <div class="select-group">
-        <label for="foodSelect">Món ăn:</label>
         <select id="foodSelect" disabled>
           <option value="">-- Chọn món --</option>
         </select>
-      </div>
-
-      <div class="select-group">
-        <label for="typeSelect">Phân loại:</label>
         <select id="typeSelect" disabled>
           <option value="">-- Chọn loại --</option>
         </select>
       </div>
     </section>
 
-    <section class="food-gallery" id="result">
-      <div class="loading-spinner">
+    <section class="food-grid" id="result">
+      <div class="loading-spinner active">
         <div class="spinner"></div>
-        <p>Vui lòng chọn quận để xem món ngon...</p>
+        <p>Đang tải dữ liệu...</p>
       </div>
     </section>
   </main>
@@ -64,31 +56,6 @@
   </footer>
 
   <script src="app.js"></script>
- <header class="hero fade-in">
-   <h1>Ăn Sập Sài Gòn</h1>
-   <p>Chọn quận để khám phá món ngon 🔥🍜</p>
- </header>
-
- <main class="container">
-  <div class="filters">
-    <select id="districtSelect">
-      <option value="">-- Chọn quận --</option>
-    </select>
-    <select id="foodSelect" disabled>
-      <option value="">-- Chọn món --</option>
-    </select>
-    <select id="typeSelect" disabled>
-      <option value="">-- Chọn loại --</option>
-    </select>
-  </div>
-
-  <div id="result" class="food-grid">
-    <!-- Loading spinner -->
-    <div class="loading-spinner active">
-      <div class="spinner"></div>
-      <p>Đang tải dữ liệu...</p>
-    </div>
-  </div>
-</main>
+ 
 </body>
 </html>
