@@ -177,6 +177,24 @@ function render(data) {
   });
 
   result.innerHTML = html;
+  // Sau khi render xong cards
+const resultDiv = document.getElementById('result');
+const loading = document.querySelector('.loading-spinner');
+
+// Ẩn loading + trigger animation grid
+loading.classList.remove('active');
+resultDiv.classList.add('loaded');
+
+// Nếu có cards, stagger animation
+const cards = resultDiv.querySelectorAll('.card');
+cards.forEach((card, index) => {
+  card.style.setProperty('--delay', index + 1); // stagger
+});
+
+// Nếu không có kết quả
+if (!data.length) {
+  resultDiv.innerHTML = '<p class="no-result fade-in">Không tìm thấy món phù hợp 😔</p>';
+}
 }
 function onDistrictChange() {
   document.getElementById("foodSelect").disabled = false;
