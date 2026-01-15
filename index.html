@@ -64,5 +64,31 @@
   </footer>
 
   <script src="app.js"></script>
+ <header class="hero fade-in">
+   <h1>Ăn Sập Sài Gòn</h1>
+   <p>Chọn quận để khám phá món ngon 🔥🍜</p>
+ </header>
+
+ <main class="container">
+  <div class="filters">
+    <select id="districtSelect">
+      <option value="">-- Chọn quận --</option>
+    </select>
+    <select id="foodSelect" disabled>
+      <option value="">-- Chọn món --</option>
+    </select>
+    <select id="typeSelect" disabled>
+      <option value="">-- Chọn loại --</option>
+    </select>
+  </div>
+
+  <div id="result" class="food-grid">
+    <!-- Loading spinner -->
+    <div class="loading-spinner active">
+      <div class="spinner"></div>
+      <p>Đang tải dữ liệu...</p>
+    </div>
+  </div>
+</main>
 </body>
 </html>
