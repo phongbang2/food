@@ -3,50 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food | Bộ sưu tập món ngon</title>
+  <title>Food Vibes • Món Ngon Mỗi Ngày</title>
   
-  <!-- PWA -->
+  <!-- PWA giữ nguyên -->
   <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#f97316"/>
+  <meta name="theme-color" content="#ff6b35"/>
   <link rel="icon" href="/icons/512.png" type="image/png"/>
   
-  <!-- Google Fonts -->
+  <!-- Font đẹp + hiện đại -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <h1>Food</h1>
-      <p>Bộ sưu tập những món ăn ngon khiến bạn phải thử!</p>
+  <header class="hero">
+    <div class="hero-content">
+      <h1>Food Vibes</h1>
+      <p>Khám phá những món ăn khiến bạn "nghiện" từ cái nhìn đầu tiên 🍜🔥</p>
     </div>
   </header>
 
   <main class="container">
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Tìm món ăn... (tên, nguyên liệu, loại)" autocomplete="off"/>
-    </div>
+    <section class="search-filter">
+      <div class="search-wrapper">
+        <input type="text" id="search" placeholder="Tìm món yêu thích... (phở, sushi, trà sữa...)" />
+        <span class="search-icon">🔍</span>
+      </div>
 
-    <div class="filters">
-      <button class="filter-btn active" data-filter="all">Tất cả</button>
-      <button class="filter-btn" data-filter="mon-an-viet">Món Việt</button>
-      <button class="filter-btn" data-filter="mon-an-tay">Món Tây</button>
-      <button class="filter-btn" data-filter="trang-mieng">Tráng miệng</button>
-      <button class="filter-btn" data-filter="do-uong">Đồ uống</button>
-    </div>
+      <div class="filter-tags">
+        <button class="tag active" data-filter="all">Tất cả</button>
+        <button class="tag" data-filter="viet">Món Việt</button>
+        <button class="tag" data-filter="asian">Món Á</button>
+        <button class="tag" data-filter="western">Món Tây</button>
+        <button class="tag" data-filter="dessert">Tráng miệng</button>
+        <button class="tag" data-filter="drink">Đồ uống</button>
+      </div>
+    </section>
 
-    <!-- Danh sách món ăn sẽ được render bởi app.js -->
-    <div class="food-grid" id="food-container">
-      <!-- app.js sẽ chèn các .food-card vào đây -->
-      <div class="loading">Đang tải danh sách món ngon...</div>
-    </div>
+    <section class="food-gallery" id="food-container">
+      <!-- app.js sẽ render các card vào đây -->
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Đang chuẩn bị những món ngon nhất...</p>
+      </div>
+    </section>
   </main>
 
   <footer>
-    <p>© 2026 — Food Collection • Made with ❤️ in Việt Nam</p>
+    <p>Made with ❤️ by Phong • © 2026 Food Vibes</p>
   </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
