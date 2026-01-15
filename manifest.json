@@ -1,6 +1,6 @@
 {
-  "name": "Food Finder",
-  "short_name": "FoodFinder",
+  "name": "Ăn Sập Sài Gòn • Món Ngon Theo Quận",
+  "short_name": "Ăn Sập Sài Gòn • Món Ngon Theo Quận",
   "description": "Tìm quán ăn nhanh theo quận và món",
   "start_url": ".",
   "display": "standalone",
