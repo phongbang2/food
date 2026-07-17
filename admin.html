@@ -58,7 +58,8 @@
   <script>
     const input = document.getElementById("adminUrl");
     const status = document.getElementById("status");
-    input.value = localStorage.getItem("food-admin-webapp-url") || new URLSearchParams(location.search).get("url") || "";
+    const DEFAULT_ADMIN_URL = "https://script.google.com/macros/s/AKfycbyoBnBYF-4pcxZ6QEtQ275d5mCHhziPZo0fyZ1czK5AgNMFzyRZU52mpMwq3zjhLxcG5g/exec";
+    input.value = localStorage.getItem("food-admin-webapp-url") || new URLSearchParams(location.search).get("url") || DEFAULT_ADMIN_URL;
 
     document.getElementById("saveButton").addEventListener("click", () => {
       const value = input.value.trim();
