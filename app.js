@@ -402,11 +402,19 @@ function getDirectMapUrl(row) {
   ]);
 
   const safeUrl = safeExternalUrl(directUrl);
-  return safeUrl && /(^|\\.)((google\\.com\\/maps)|(maps\\.app\\.goo\\.gl)|(goo\\.gl\\/maps))($|\\/)/i.test(new URL(safeUrl).hostname + new URL(safeUrl).pathname)
-    ? safeUrl
-    : "";
-}
+  if (!safeUrl) return "";
 
+  const url = new URL(safeUrl);
+  const hostname = url.hostname.toLowerCase();
+  const isGoogleMaps =
+    (hostname === "google.com" || hostname === "www.google.com") &&
+    url.pathname.toLowerCase().startsWith("/maps");
+  const isShortMapsLink =
+    hostname === "maps.app.goo.gl" ||
+    (hostname === "goo.gl" && url.pathname.toLowerCase().startsWith("/maps"));
+
+  return isGoogleMaps || isShortMapsLink ? safeUrl : "";
+}
 function getRowMapUrl(row) {
   const directUrl = getDirectMapUrl(row);
   if (directUrl) return directUrl;
