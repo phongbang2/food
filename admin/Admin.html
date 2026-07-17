@@ -13,6 +13,7 @@
     .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}.button{min-height:42px;padding:.6rem .85rem;border:0;border-radius:999px;color:#fff;background:var(--primary);cursor:pointer;font-weight:800}.button.secondary{color:var(--primary);background:var(--soft);border:1px solid rgba(255,107,53,.2)}.button.danger{color:#fff;background:#c0392b}.button:disabled{cursor:not-allowed;opacity:.5}.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
     .search-results{display:grid;gap:.45rem;margin-top:.5rem}.search-item{display:block;width:100%;padding:.65rem .75rem;border:1px solid var(--line);border-radius:11px;text-align:left;background:#fff;cursor:pointer}.search-item strong{display:block}.search-item small{color:var(--muted)}
     .pending{display:grid;gap:.65rem}.pending-item{padding:.8rem;border:1px solid var(--line);border-radius:14px;background:#fff}.pending-head{display:flex;justify-content:space-between;gap:.5rem}.pending-head strong{font-size:.95rem}.status{color:var(--primary);font-size:.74rem;font-weight:800}.pending-meta{margin:.35rem 0;color:var(--muted);font-size:.78rem;line-height:1.45}.pending-actions{display:flex;gap:.45rem;margin-top:.55rem}.pending-actions .button{min-height:34px;padding:.4rem .65rem;font-size:.75rem}.empty{padding:1.2rem;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}.message{min-height:1.3rem;margin-top:.8rem;font-size:.84rem}.message.success{color:var(--green)}.message.error{color:var(--red)}.hidden{display:none!important}
+    .discovery-list{display:grid;gap:.55rem;margin-top:.8rem;max-height:340px;overflow:auto}.discovery-item{display:grid;grid-template-columns:auto 1fr;gap:.6rem;padding:.7rem;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer}.discovery-item input{width:auto;min-height:auto;margin-top:.2rem}.discovery-item strong{display:block;font-size:.86rem}.discovery-item small{display:block;margin-top:.2rem;color:var(--muted);font-size:.74rem;line-height:1.4}.discovery-item.is-duplicate{opacity:.55;cursor:not-allowed}.source-note{margin-top:.7rem;color:var(--muted);font-size:.74rem;line-height:1.45}.loading-button{cursor:wait!important;opacity:.7}
     @media(max-width:780px){.layout{grid-template-columns:1fr}.topbar{flex-direction:column}.grid{grid-template-columns:1fr}}
   </style>
 </head>
@@ -59,6 +60,19 @@
       </section>
 
       <section class="card">
+        <h2>Tìm quán mới miễn phí</h2>
+        <p class="subtle">Tìm dữ liệu địa điểm từ OpenStreetMap/Overpass. Kết quả chỉ là đề xuất, chưa phải xác nhận quán đang hoạt động hoặc “hot”.</p>
+        <div class="grid">
+          <div><label for="discoveryDistrict">Quận muốn tìm (không bắt buộc)</label><input id="discoveryDistrict" placeholder="Ví dụ: Quận 1"></div>
+          <div><label for="discoveryCategory">Loại địa điểm</label><select id="discoveryCategory"><option value="all">Tất cả quán ăn</option><option value="restaurant">Nhà hàng</option><option value="cafe">Quán cà phê</option><option value="fastfood">Fastfood</option><option value="bakery">Tiệm bánh / bánh mì</option></select></div>
+        </div>
+        <div class="actions"><button class="button secondary" id="discoverButton" type="button">Tìm quán mới</button><button class="button" id="importOsmButton" type="button" disabled>Đưa lựa chọn vào hàng chờ</button></div>
+        <div class="discovery-list" id="discoveryList"><div class="empty">Chọn điều kiện rồi bấm “Tìm quán mới”.</div></div>
+        <p class="source-note">Nguồn: OpenStreetMap contributors. Hãy kiểm tra tên, địa chỉ và giờ mở cửa trước khi duyệt.</p>
+        <div class="message" id="discoveryMessage" role="status"></div>
+      </section>
+
+      <section class="card">
         <h2>Hàng chờ duyệt <span id="pendingCount"></span></h2>
         <p class="subtle">Chỉ khi bấm “Duyệt & ghi” dữ liệu mới thay đổi tab HCM.</p>
         <div class="pending" id="pendingList"><div class="empty">Đang tải…</div></div>
@@ -69,7 +83,7 @@
 
   <script>
     const $ = id => document.getElementById(id);
-    const state = { pending: [], searchTimer: null };
+    const state = { pending: [], searchTimer: null, candidates: [] };
 
     function message(id, text, tone) {
       const element = $(id);
@@ -162,6 +176,84 @@
       });
     }
 
+    function renderDiscovery() {
+      const list = $("discoveryList");
+      const importButton = $("importOsmButton");
+
+      if (!state.candidates.length) {
+        list.innerHTML = "<div class='empty'>Chưa có kết quả tìm kiếm.</div>";
+        importButton.disabled = true;
+        return;
+      }
+
+      list.innerHTML = state.candidates.map((item, index) => {
+        const duplicateClass = item.duplicate ? " is-duplicate" : "";
+        const duplicateText = item.duplicate ? " • Đã có/đang chờ trong file" : "";
+        return "<label class='discovery-item" + duplicateClass + "'>" +
+          "<input type='checkbox' data-discovery='" + index + "'" +
+          (item.duplicate ? " disabled" : " checked") + ">" +
+          "<span><strong>" + escapeHtml(item.name) + "</strong>" +
+          "<small>" + escapeHtml(item.type + " • " + (item.district || "Chưa rõ quận") + " • " + (item.street || "Chưa rõ địa chỉ") + duplicateText) + "</small></span>" +
+        "</label>";
+      }).join("");
+
+      importButton.disabled = !state.candidates.some(item => !item.duplicate);
+    }
+
+    async function discoverOsm() {
+      const button = $("discoverButton");
+      button.disabled = true;
+      button.classList.add("loading-button");
+      button.textContent = "Đang tìm…";
+      message("discoveryMessage", "", "");
+
+      try {
+        const result = await run("discoverOsmPlaces", [{
+          district: $("discoveryDistrict").value.trim(),
+          category: $("discoveryCategory").value
+        }]);
+        state.candidates = result.candidates || [];
+        renderDiscovery();
+        message("discoveryMessage", "Tìm thấy " + state.candidates.length + " địa điểm. Hãy bỏ chọn các quán chưa phù hợp.", "success");
+      } catch (error) {
+        state.candidates = [];
+        renderDiscovery();
+        message("discoveryMessage", error.message || "Nguồn tìm kiếm đang bận.", "error");
+      } finally {
+        button.disabled = false;
+        button.classList.remove("loading-button");
+        button.textContent = "Tìm quán mới";
+      }
+    }
+
+    async function importOsm() {
+      const selected = Array.from($("discoveryList").querySelectorAll("[data-discovery]:checked"))
+        .map(input => state.candidates[Number(input.dataset.discovery)])
+        .filter(Boolean);
+
+      if (!selected.length) {
+        message("discoveryMessage", "Hãy chọn ít nhất một quán.", "error");
+        return;
+      }
+
+      const button = $("importOsmButton");
+      button.disabled = true;
+      button.textContent = "Đang lưu…";
+
+      try {
+        const result = await run("saveOsmCandidates", [selected]);
+        message("discoveryMessage", result.message, "success");
+        state.candidates = [];
+        renderDiscovery();
+        await refresh();
+      } catch (error) {
+        message("discoveryMessage", error.message || "Không thể đưa vào hàng chờ.", "error");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Đưa lựa chọn vào hàng chờ";
+      }
+    }
+
     async function refresh() {
       try {
         const data = await run("getBootstrap");
@@ -196,6 +288,9 @@
         message("queueMessage", error.message || "Không thể từ chối.", "error");
       }
     }
+
+    $("discoverButton").addEventListener("click", discoverOsm);
+    $("importOsmButton").addEventListener("click", importOsm);
 
     $("action").addEventListener("change", () => {
       const isUpdate = $("action").value === "UPDATE";
