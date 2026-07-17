@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ff6b35" />
+  <title>Quản trị dữ liệu • Ăn Sập Sài Gòn</title>
+  <style>
+    :root{--primary:#ff6b35;--ink:#17202a;--muted:#697586;--soft:#fff7f2;--line:#eadfd8}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(160deg,#fffaf7,#fff1e8);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(760px,calc(100% - 2rem));margin:0 auto;padding:3rem 0 4rem}
+    .brand{color:var(--primary);font-size:.78rem;font-weight:800;letter-spacing:.14em}.hero h1{margin:.6rem 0 .8rem;font-size:clamp(2rem,8vw,3.5rem);letter-spacing:-.06em}.hero p{max-width:620px;color:var(--muted);line-height:1.6}
+    .card{margin-top:1.5rem;padding:1.35rem;border:1px solid rgba(255,255,255,.8);border-radius:24px;background:rgba(255,255,255,.9);box-shadow:0 18px 55px rgba(80,50,30,.1)}
+    .card h2{margin:0 0 .6rem;font-size:1.15rem}.card p{color:var(--muted);line-height:1.55}
+    label{display:block;margin:1rem 0 .45rem;color:var(--muted);font-size:.83rem;font-weight:700}
+    input{width:100%;min-height:48px;padding:.75rem .85rem;border:1px solid var(--line);border-radius:13px;outline:0;font:inherit}input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(255,107,53,.12)}
+    .actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1rem}.button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:.7rem 1rem;border:0;border-radius:999px;color:#fff;background:var(--primary);cursor:pointer;font-weight:800}.button.secondary{color:var(--primary);background:var(--soft);border:1px solid rgba(255,107,53,.2)}.button:disabled{cursor:not-allowed;opacity:.5}
+    ol{padding-left:1.2rem;color:var(--muted);line-height:1.75}code{padding:.12rem .3rem;border-radius:5px;background:#fff0e8;color:#a5411e}
+    .notice{padding:.8rem 1rem;border-radius:13px;color:#754c00;background:#fff4d7;line-height:1.5;font-size:.9rem}.status{min-height:1.4rem;margin-top:.9rem;color:#198754;font-size:.86rem}
+    a{color:var(--primary);font-weight:700}footer{margin-top:1.4rem;color:var(--muted);font-size:.82rem}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <span class="brand">ĂN SẬP SÀI GÒN</span>
+      <h1>Quản trị dữ liệu</h1>
+      <p>Đây là cổng mở bảng duyệt quán. Mỗi thay đổi phải được kiểm tra rồi mới ghi vào tab <strong>HCM</strong>.</p>
+    </section>
+
+    <section class="card">
+      <h2>Thiết lập một lần</h2>
+      <p>Trong Google Apps Script, triển khai file quản trị trong thư mục <code>admin/</code> thành Web app. Sau khi cấp quyền Google, dán URL Web app vào ô dưới đây.</p>
+      <div class="notice">Web app nên đặt “Execute as: Me” và giới hạn người có quyền truy cập. Không chia sẻ URL quản trị công khai.</div>
+      <label for="adminUrl">URL Google Apps Script Web app</label>
+      <input id="adminUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="url" />
+      <div class="actions">
+        <button class="button" id="saveButton" type="button">Lưu & mở quản trị</button>
+        <a class="button secondary" href="https://docs.google.com/spreadsheets/d/1LHQlScoOABMay4-faE4ECdX7LlcPaDQzlDJFYqKmiZ8/edit" target="_blank" rel="noopener noreferrer">Mở file gốc</a>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card">
+      <h2>Cài bảng quản trị</h2>
+      <ol>
+        <li>Mở <a href="https://script.google.com/" target="_blank" rel="noopener noreferrer">script.google.com</a> bằng đúng tài khoản có quyền sửa file.</li>
+        <li>Tạo project mới, dán <code>admin/Code.gs</code> và tạo file HTML tên <code>Admin</code>, sau đó dán <code>admin/Admin.html</code>.</li>
+        <li>Deploy → New deployment → Web app → chạy bằng tài khoản của bạn → cấp quyền khi Google yêu cầu.</li>
+        <li>Dán URL Web app ở trên. Lần sau chỉ cần bấm “Quản trị dữ liệu”.</li>
+      </ol>
+      <p>Không cần Google Maps API. Việc thêm “quán hot” vẫn cần nguồn review/link để tránh tự bịa địa chỉ hoặc giờ mở cửa.</p>
+    </section>
+
+    <footer><a href="./">← Quay lại trang khám phá</a></footer>
+  </main>
+
+  <script>
+    const input = document.getElementById("adminUrl");
+    const status = document.getElementById("status");
+    input.value = localStorage.getItem("food-admin-webapp-url") || new URLSearchParams(location.search).get("url") || "";
+
+    document.getElementById("saveButton").addEventListener("click", () => {
+      const value = input.value.trim();
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/.test(value)) {
+        status.textContent = "URL chưa đúng dạng Google Apps Script Web app.";
+        status.style.color = "#c0392b";
+        return;
+      }
+      localStorage.setItem("food-admin-webapp-url", value);
+      status.textContent = "Đã lưu. Đang mở bảng quản trị…";
+      status.style.color = "#198754";
+      window.open(value, "_blank", "noopener");
+    });
+  </script>
+</body>
+</html>
