@@ -150,6 +150,45 @@ button { -webkit-tap-highlight-color: transparent; }
   letter-spacing: -0.04em;
 }
 
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.location-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 38px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  border-radius: 999px;
+  color: var(--primary-dark);
+  background: var(--soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.location-button:hover {
+  transform: translateY(-2px);
+  background: #ffeadf;
+}
+
+.location-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.location-button.is-active {
+  color: #17794d;
+  border-color: rgba(43, 182, 115, 0.25);
+  background: #eaf9f1;
+}
+
 .live-dot {
   flex: 0 0 auto;
   width: 11px;
@@ -420,6 +459,12 @@ footer span { color: var(--primary-dark); font-weight: 700; }
 @media (max-width: 680px) {
   .hero { min-height: 350px; padding-bottom: 5.2rem; }
   .container { width: min(100% - 1rem, 560px); margin-top: -2.8rem; }
+  .heading-actions {
+    align-items: flex-end;
+    flex-direction: column-reverse;
+    gap: 0.55rem;
+  }
+
   .filter-grid { grid-template-columns: 1fr; gap: 0.8rem; }
   .food-gallery { grid-template-columns: 1fr; gap: 1rem; }
   .food-visual { height: 185px; }
