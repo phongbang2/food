@@ -335,6 +335,21 @@ select:disabled { cursor: not-allowed; opacity: 0.48; }
   backdrop-filter: blur(10px);
 }
 
+.image-source-badge {
+  position: absolute;
+  z-index: 1;
+  right: 0.9rem;
+  bottom: 0.9rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(23, 32, 42, 0.48);
+  font-size: 0.66rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+}
+
 .result-content { padding: 1.1rem 1.1rem 1.25rem; }
 .result-content h3 { margin: 0 0 0.8rem; font-size: 1.15rem; line-height: 1.25; }
 
