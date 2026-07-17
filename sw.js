@@ -2,6 +2,16 @@ const CACHE_VERSION = "v3";
 const SHELL_CACHE = "food-finder-shell-" + CACHE_VERSION;
 const DATA_CACHE = "food-finder-data-" + CACHE_VERSION;
 const PAPA_URL = "https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js";
+const ILLUSTRATION_IMAGES = [
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=82",
+  "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=82"
+];
 
 const LOCAL_SHELL = [
   "./",
@@ -22,7 +32,10 @@ self.addEventListener("install", event => {
       .then(cache => cache.addAll(LOCAL_SHELL.map(absoluteUrl)))
       .then(() =>
         caches.open(SHELL_CACHE)
-          .then(cache => cache.add(PAPA_URL).catch(() => undefined))
+          .then(cache => Promise.all([
+            cache.add(PAPA_URL).catch(() => undefined),
+            ...ILLUSTRATION_IMAGES.map(url => cache.add(url).catch(() => undefined))
+          ]))
       )
       .then(() => self.skipWaiting())
   );
@@ -79,7 +92,8 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  if (url.hostname === "cdnjs.cloudflare.com") {
+  if (url.hostname === "cdnjs.cloudflare.com" ||
+      url.hostname === "images.unsplash.com") {
     event.respondWith(networkFirst(request, SHELL_CACHE));
   }
 });
