@@ -15,7 +15,8 @@ const state = {
   },
   deferredPrompt: null,
   location: null,
-  locating: false
+  locating: false,
+  geocodeRun: 0
 };
 
 const distanceByRow = new WeakMap();
@@ -455,6 +456,7 @@ async function geocodeAddress(address) {
 async function updateDistances() {
   if (!state.location) return;
 
+  const runId = ++state.geocodeRun;
   const rows = getFilteredRows();
   const unresolved = [];
   let directCount = 0;
@@ -483,15 +485,18 @@ async function updateDistances() {
   render();
 
   if (unresolved.length) {
-    void geocodeRowsInBackground(unresolved.slice(0, MAX_GEOCODES_PER_REQUEST));
+    void geocodeRowsInBackground(
+      unresolved.slice(0, MAX_GEOCODES_PER_REQUEST),
+      runId
+    );
   }
 }
 
-async function geocodeRowsInBackground(rows) {
+async function geocodeRowsInBackground(rows, runId) {
   let geocodedCount = 0;
 
   for (const row of rows) {
-    if (!state.location) return;
+    if (!state.location || runId !== state.geocodeRun) return;
 
     const coordinates = await geocodeAddress(getRowAddress(row));
     if (coordinates) {
@@ -504,7 +509,7 @@ async function geocodeRowsInBackground(rows) {
     await new Promise(resolve => window.setTimeout(resolve, 1100));
   }
 
-  if (geocodedCount) {
+  if (geocodedCount && runId === state.geocodeRun) {
     setStatus("Đã cập nhật khoảng cách và ưu tiên quán gần bạn nhất.", "success");
     render();
   }
