@@ -415,6 +415,28 @@ function getDirectMapUrl(row) {
 
   return isGoogleMaps || isShortMapsLink ? safeUrl : "";
 }
+function getMapSearchQuery(row) {
+  const restaurant = getField(row, [
+    "Tên quán",
+    "Ten quan",
+    "Quán",
+    "Tên nhà hàng",
+    "Ten nha hang"
+  ]);
+  const fullAddress = getField(row, [
+    "Địa chỉ đầy đủ",
+    "Dia chi day du",
+    "Địa chỉ quán",
+    "Dia chi quan"
+  ]);
+  const district = getField(row, ["Quận", "Quan"]);
+
+  // A verified full address is useful; a street-only value can mislead Maps.
+  return fullAddress
+    ? [restaurant, fullAddress].filter(Boolean).join(", ")
+    : [restaurant, district, "Hồ Chí Minh"].filter(Boolean).join(", ");
+}
+
 function getRowMapUrl(row) {
   const directUrl = getDirectMapUrl(row);
   if (directUrl) return directUrl;
@@ -425,10 +447,10 @@ function getRowMapUrl(row) {
       encodeURIComponent(coordinates.latitude + "," + coordinates.longitude);
   }
 
-  const address = getRowAddress(row);
-  return address
+  const searchQuery = getMapSearchQuery(row);
+  return searchQuery
     ? "https://www.google.com/maps/search/?api=1&query=" +
-      encodeURIComponent(address)
+      encodeURIComponent(searchQuery)
     : "";
 }
 
@@ -436,7 +458,7 @@ function getMapLinkLabel(row) {
   if (getDirectMapUrl(row) || getRowCoordinates(row)) {
     return "Mở đúng vị trí trên Google Maps";
   }
-  return "Tìm địa chỉ trên Google Maps";
+  return "Tìm quán trên Google Maps";
 }
 
 function getRowImage(row) {
