@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--primary:#ff6b35;--ink:#17202a;--muted:#697586;--soft:#fff7f2;--line:#eadfd8;--green:#198754;--red:#c0392b}
+    *{box-sizing:border-box}body{margin:0;color:var(--ink);background:linear-gradient(160deg,#fffaf7,#fff1e8);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .shell{width:min(1120px,calc(100% - 2rem));margin:auto;padding:2rem 0 4rem}.eyebrow{color:var(--primary);font-size:.76rem;font-weight:800;letter-spacing:.14em}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.topbar h1{margin:.5rem 0;font-size:clamp(1.8rem,5vw,3rem);letter-spacing:-.06em}.topbar p{margin:0;color:var(--muted)}.pill{padding:.45rem .7rem;border-radius:999px;color:#17794d;background:#eaf9f1;font-size:.78rem;font-weight:800;white-space:nowrap}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.9fr);gap:1rem;margin-top:1.5rem}.card{padding:1.2rem;border:1px solid rgba(255,255,255,.9);border-radius:22px;background:rgba(255,255,255,.9);box-shadow:0 18px 55px rgba(80,50,30,.1)}.card h2{margin:0 0 .8rem;font-size:1.15rem}.subtle{color:var(--muted);font-size:.86rem;line-height:1.5}
+    label{display:block;margin:.85rem 0 .35rem;color:var(--muted);font-size:.78rem;font-weight:800}input,select,textarea{width:100%;padding:.7rem .75rem;border:1px solid var(--line);border-radius:12px;outline:0;color:var(--ink);background:#fff;font:inherit}textarea{min-height:76px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(255,107,53,.12)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}.button{min-height:42px;padding:.6rem .85rem;border:0;border-radius:999px;color:#fff;background:var(--primary);cursor:pointer;font-weight:800}.button.secondary{color:var(--primary);background:var(--soft);border:1px solid rgba(255,107,53,.2)}.button.danger{color:#fff;background:#c0392b}.button:disabled{cursor:not-allowed;opacity:.5}.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
+    .search-results{display:grid;gap:.45rem;margin-top:.5rem}.search-item{display:block;width:100%;padding:.65rem .75rem;border:1px solid var(--line);border-radius:11px;text-align:left;background:#fff;cursor:pointer}.search-item strong{display:block}.search-item small{color:var(--muted)}
+    .pending{display:grid;gap:.65rem}.pending-item{padding:.8rem;border:1px solid var(--line);border-radius:14px;background:#fff}.pending-head{display:flex;justify-content:space-between;gap:.5rem}.pending-head strong{font-size:.95rem}.status{color:var(--primary);font-size:.74rem;font-weight:800}.pending-meta{margin:.35rem 0;color:var(--muted);font-size:.78rem;line-height:1.45}.pending-actions{display:flex;gap:.45rem;margin-top:.55rem}.pending-actions .button{min-height:34px;padding:.4rem .65rem;font-size:.75rem}.empty{padding:1.2rem;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}.message{min-height:1.3rem;margin-top:.8rem;font-size:.84rem}.message.success{color:var(--green)}.message.error{color:var(--red)}.hidden{display:none!important}
+    @media(max-width:780px){.layout{grid-template-columns:1fr}.topbar{flex-direction:column}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><span class="eyebrow">ĂN SẬP SÀI GÒN</span><h1>Review & cập nhật quán</h1><p>Đề xuất → kiểm tra → duyệt → ghi vào tab HCM.</p></div>
+      <span class="pill" id="connection">Đang kết nối…</span>
+    </header>
+
+    <div class="layout">
+      <section class="card">
+        <h2>Đề xuất quán / cập nhật</h2>
+        <p class="subtle">Dùng cho quán mới, quán hot hoặc thông tin cần sửa. Mỗi đề xuất phải có nguồn review/link.</p>
+
+        <form id="reviewForm">
+          <div class="grid">
+            <div><label for="action">Hành động</label><select id="action"><option value="ADD">Thêm quán mới</option><option value="UPDATE">Cập nhật quán hiện có</option></select></div>
+            <div><label for="source">Nguồn review / link</label><input id="source" type="text" placeholder="TikTok, Facebook, Google Maps…" required></div>
+          </div>
+
+          <div id="targetPanel" class="hidden">
+            <label for="existingSearch">Tìm quán trong HCM để cập nhật</label>
+            <input id="existingSearch" type="search" placeholder="Gõ tên quán hoặc món…" autocomplete="off">
+            <div class="search-results" id="searchResults"></div>
+            <input id="targetRow" type="hidden">
+          </div>
+
+          <div class="grid">
+            <div><label for="name">Tên quán</label><input id="name" required></div>
+            <div><label for="food">Tên món</label><input id="food" required></div>
+            <div><div><label for="type">Phân loại món</label><input id="type" placeholder="Ví dụ: Bánh mì, Cơm" required></div></div>
+            <div><label for="district">Quận</label><input id="district" placeholder="Ví dụ: Quận 3" required></div>
+            <div><label for="street">Tên đường / địa chỉ</label><input id="street" required></div>
+            <div><label for="hours">Giờ mở cửa</label><input id="hours" placeholder="Ví dụ: 6h-22h"></div>
+            <div><label for="price">Khoảng giá</label><input id="price" placeholder="Ví dụ: 30k-60k"></div>
+            <div><label for="reason">Lý do đề xuất</label><input id="reason" placeholder="Địa chỉ mới, quán đang hot…"></div>
+          </div>
+
+          <label for="note">Note</label><textarea id="note" placeholder="Thông tin thêm, ngày nghỉ, món nên thử…"></textarea>
+          <div class="actions"><button class="button" type="submit">Lưu vào hàng chờ review</button><button class="button secondary" id="clearButton" type="button">Xoá form</button></div>
+          <div class="message" id="formMessage" role="status"></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Hàng chờ duyệt <span id="pendingCount"></span></h2>
+        <p class="subtle">Chỉ khi bấm “Duyệt & ghi” dữ liệu mới thay đổi tab HCM.</p>
+        <div class="pending" id="pendingList"><div class="empty">Đang tải…</div></div>
+        <div class="message" id="queueMessage" role="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const state = { pending: [], searchTimer: null };
+
+    function message(id, text, tone) {
+      const element = $(id);
+      element.textContent = text || "";
+      element.className = "message" + (tone ? " " + tone : "");
+    }
+
+    function run(name, args) {
+      return new Promise((resolve, reject) => {
+        let runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(error => reject(error));
+        runner[name](...(args || []));
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, character => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[character]));
+    }
+
+    function formPayload() {
+      return {
+        action: $("action").value,
+        targetRow: $("targetRow").value,
+        name: $("name").value,
+        food: $("food").value,
+        type: $("type").value,
+        street: $("street").value,
+        district: $("district").value,
+        hours: $("hours").value,
+        price: $("price").value,
+        note: $("note").value,
+        source: $("source").value,
+        reason: $("reason").value
+      };
+    }
+
+    function resetForm() {
+      $("reviewForm").reset();
+      $("targetRow").value = "";
+      $("targetPanel").classList.add("hidden");
+      $("searchResults").replaceChildren();
+      message("formMessage", "", "");
+    }
+
+    function fillExisting(item) {
+      $("targetRow").value = item.row;
+      $("name").value = item.name;
+      $("food").value = item.food;
+      $("type").value = item.type;
+      $("street").value = item.street;
+      $("district").value = item.district;
+      $("hours").value = item.hours;
+      $("price").value = item.price;
+      $("note").value = item.note;
+      $("searchResults").innerHTML = "<div class='subtle'>Đã chọn dòng " + item.row + ": " + escapeHtml(item.name) + "</div>";
+    }
+
+    async function searchExisting() {
+      const query = $("existingSearch").value.trim();
+      if (query.length < 2) {
+        $("searchResults").replaceChildren();
+        return;
+      }
+
+      try {
+        const results = await run("searchExisting", [query]);
+        $("searchResults").innerHTML = results.length
+          ? results.map(item => "<button class='search-item' type='button' data-row='" + item.row + "'><strong>" + escapeHtml(item.name) + "</strong><small>" + escapeHtml(item.food + " • " + item.district + " • dòng " + item.row) + "</small></button>").join("")
+          : "<div class='subtle'>Không tìm thấy quán phù hợp.</div>";
+
+        $("searchResults").querySelectorAll("[data-row]").forEach(button => {
+          const item = results.find(result => String(result.row) === button.dataset.row);
+          button.addEventListener("click", () => fillExisting(item));
+        });
+      } catch (error) {
+        message("formMessage", error.message || "Không tìm được dữ liệu.", "error");
+      }
+    }
+
+    function renderPending() {
+      $("pendingCount").textContent = state.pending.length ? "(" + state.pending.length + ")" : "";
+      $("pendingList").innerHTML = state.pending.length
+        ? state.pending.map(item => "<article class='pending-item'><div class='pending-head'><strong>" + escapeHtml(item.name) + "</strong><span class='status'>" + escapeHtml(item.action === "ADD" ? "THÊM MỚI" : "CẬP NHẬT") + "</span></div><div class='pending-meta'>" + escapeHtml(item.food + " • " + item.type + " • " + item.district) + "<br>" + escapeHtml(item.street) + "<br>Nguồn: " + escapeHtml(item.source) + "</div><div class='pending-actions'><button class='button' type='button' data-approve='" + escapeHtml(item.id) + "'>Duyệt & ghi</button><button class='button danger' type='button' data-reject='" + escapeHtml(item.id) + "'>Từ chối</button></div></article>").join("")
+        : "<div class='empty'>Chưa có đề xuất chờ duyệt.</div>";
+
+      $("pendingList").querySelectorAll("[data-approve]").forEach(button => {
+        button.addEventListener("click", () => approve(button.dataset.approve));
+      });
+      $("pendingList").querySelectorAll("[data-reject]").forEach(button => {
+        button.addEventListener("click", () => reject(button.dataset.reject));
+      });
+    }
+
+    async function refresh() {
+      try {
+        const data = await run("getBootstrap");
+        state.pending = data.pending || [];
+        $("connection").textContent = "Đã kết nối Google Sheet";
+        renderPending();
+      } catch (error) {
+        $("connection").textContent = "Chưa có quyền";
+        message("queueMessage", error.message || "Không thể đọc Google Sheet.", "error");
+      }
+    }
+
+    async function approve(id) {
+      if (!confirm("Duyệt đề xuất này và ghi vào tab HCM?")) return;
+      try {
+        const result = await run("applyReview", [id]);
+        message("queueMessage", result.status + " thành công ở dòng " + result.row + ".", "success");
+        await refresh();
+      } catch (error) {
+        message("queueMessage", error.message || "Không thể cập nhật.", "error");
+      }
+    }
+
+    async function reject(id) {
+      const reason = prompt("Lý do từ chối:", "Chưa đủ nguồn hoặc thông tin chưa chính xác");
+      if (reason === null) return;
+      try {
+        await run("rejectReview", [id, reason]);
+        message("queueMessage", "Đã từ chối đề xuất.", "success");
+        await refresh();
+      } catch (error) {
+        message("queueMessage", error.message || "Không thể từ chối.", "error");
+      }
+    }
+
+    $("action").addEventListener("change", () => {
+      const isUpdate = $("action").value === "UPDATE";
+      $("targetPanel").classList.toggle("hidden", !isUpdate);
+      if (!isUpdate) $("targetRow").value = "";
+    });
+
+    $("existingSearch").addEventListener("input", () => {
+      clearTimeout(state.searchTimer);
+      state.searchTimer = setTimeout(searchExisting, 280);
+    });
+
+    $("reviewForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const payload = formPayload();
+      if (payload.action === "UPDATE" && !payload.targetRow) {
+        message("formMessage", "Hãy chọn đúng quán trong kết quả tìm kiếm trước.", "error");
+        return;
+      }
+
+      try {
+        const result = await run("saveReview", [payload]);
+        message("formMessage", "Đã lưu " + result.id + " vào hàng chờ review.", "success");
+        resetForm();
+        await refresh();
+      } catch (error) {
+        message("formMessage", error.message || "Không thể lưu đề xuất.", "error");
+      }
+    });
+
+    $("clearButton").addEventListener("click", resetForm);
+    refresh();
+  </script>
+</body>
+</html>
