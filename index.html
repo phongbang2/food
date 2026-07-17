@@ -1,74 +1,101 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ăn Sập Sài Gòn • Món Ngon Theo Quận</title>
-  
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json"/>
-  <meta name="theme-color" content="#ff6b35"/>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="style.css"/>
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Ăn Sập Sài Gòn • Món Ngon Theo Quận">
-  <link rel="apple-touch-icon" href="icons/icon-180.png">  
-  
-  <!-- PapaParse cho CSV -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff6b35" />
+  <meta name="description" content="Khám phá quán ngon và món ăn nổi bật theo từng quận ở Sài Gòn." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ăn Sập Sài Gòn" />
+
+  <title>Ăn Sập Sài Gòn • Món ngon theo quận</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Satisfy&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <header class="hero">
     <div class="hero-content">
-      <h1>Ăn Sập Sài Gòn</h1>
-      <p>Chọn quận → khám phá món ngon quanh bạn 🔥🍜</p>
+      <span class="eyebrow">CẨM NANG ĂN UỐNG SÀI GÒN</span>
+      <h1>Ăn Sập<br />Sài Gòn</h1>
+      <p>Chọn quận, chọn món và tìm ngay điểm ăn ngon quanh bạn.</p>
+      <button class="install-button" id="installButton" type="button" hidden>
+        <span aria-hidden="true">＋</span> Cài lên màn hình chính
+      </button>
     </div>
   </header>
 
   <main class="container">
-    <section class="filters">
-      <div class="select-group">
-        <label for="districtSelect">Chọn Quận:</label>
-        <select id="districtSelect">
-          <option value="">-- Chọn quận --</option>
-        </select>
+    <section class="filter-card" aria-labelledby="filterTitle">
+      <div class="section-heading">
+        <div>
+          <span class="section-kicker">KHÁM PHÁ</span>
+          <h2 id="filterTitle">Bạn muốn ăn gì hôm nay?</h2>
+        </div>
+        <span class="live-dot" title="Dữ liệu được cập nhật trực tuyến" aria-label="Đang kết nối"></span>
       </div>
 
-      <div class="select-group">
-        <label for="foodSelect">Món ăn:</label>
-        <select id="foodSelect" disabled>
-          <option value="">-- Chọn món --</option>
-        </select>
+      <div class="filter-grid">
+        <div class="select-group">
+          <label for="districtSelect">Khu vực</label>
+          <div class="select-wrap">
+            <select id="districtSelect">
+              <option value="">Chọn quận</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="select-group">
+          <label for="foodSelect">Món ăn</label>
+          <div class="select-wrap">
+            <select id="foodSelect" disabled>
+              <option value="">Chọn món</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="select-group">
+          <label for="typeSelect">Phân loại</label>
+          <div class="select-wrap">
+            <select id="typeSelect" disabled>
+              <option value="">Chọn loại món</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="select-group">
-        <label for="typeSelect">Phân loại:</label>
-        <select id="typeSelect" disabled>
-          <option value="">-- Chọn loại --</option>
-        </select>
-      </div>
+      <div class="status-line" id="status" role="status" aria-live="polite"></div>
     </section>
 
-    <section class="food-gallery" id="result">
-      <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>Vui lòng chọn quận để xem món ngon...</p>
+    <section class="results-section" aria-labelledby="resultsTitle">
+      <div class="results-heading">
+        <div>
+          <span class="section-kicker">GỢI Ý CHO BẠN</span>
+          <h2 id="resultsTitle">Quán ngon gần đây</h2>
+        </div>
+      </div>
+
+      <div class="food-gallery" id="result" aria-live="polite">
+        <div class="loading-state" id="loadingState">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Đang tải danh sách món ngon…</p>
+        </div>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>© 2026 — Ăn Sập Sài Gòn • Made with ❤️</p>
+    <p>© 2026 Ăn Sập Sài Gòn</p>
+    <span>Ăn ngon • Sống vui</span>
   </footer>
 
-  <script src="app.js"></script>
- 
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script defer src="./app.js"></script>
 </body>
 </html>
