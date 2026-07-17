@@ -1,7 +1,9 @@
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1LHQlScoOABMay4-faE4ECdX7LlcPaDQzlDJFYqKmiZ8/export?format=csv&gid=0";
-const DATA_CACHE_KEY = "food-finder-data-v2";
+const DATA_CACHE_KEY = "food-finder-data-v3";
+const GEOCODE_CACHE_KEY = "food-finder-geocode-v1";
 const REQUEST_TIMEOUT_MS = 12000;
+const MAX_GEOCODES_PER_REQUEST = 12;
 
 const state = {
   allData: [],
@@ -11,9 +13,12 @@ const state = {
     food: "",
     type: ""
   },
-  deferredPrompt: null
+  deferredPrompt: null,
+  location: null,
+  locating: false
 };
 
+const distanceByRow = new WeakMap();
 const $ = id => document.getElementById(id);
 
 function escapeHtml(value) {
@@ -27,7 +32,17 @@ function escapeHtml(value) {
 }
 
 function normalise(value) {
-  return String(value ?? "").trim().replace(/\\s+/g, " ");
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s,;|]+|[\s,;|]+$/g, "")
+    .trim();
+}
+
+function valueKey(value) {
+  return normalise(value).toLocaleLowerCase("vi");
 }
 
 function getField(row, keys) {
@@ -39,14 +54,30 @@ function getField(row, keys) {
 }
 
 function splitValues(value) {
-  return normalise(value)
-    .split(/[,;|\\n]/)
-    .map(item => normalise(item))
+  const cleaned = String(value ?? "")
+    .normalize("NFC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "");
+
+  return cleaned
+    .split(/[,;|\r\n]/)
+    .map(normalise)
     .filter(Boolean);
 }
 
 function uniqueSorted(values) {
-  return [...new Set(values.filter(Boolean))].sort((a, b) =>
+  const unique = new Map();
+
+  values.forEach(rawValue => {
+    const value = normalise(rawValue);
+    if (!value) return;
+
+    const key = valueKey(value);
+    if (!unique.has(key) || value.length > unique.get(key).length) {
+      unique.set(key, value);
+    }
+  });
+
+  return [...unique.values()].sort((a, b) =>
     a.localeCompare(b, "vi", { sensitivity: "base" })
   );
 }
@@ -116,7 +147,8 @@ function parseCsv(csv) {
   }
 
   const rows = parsed.data.filter(row =>
-    getField(row, ["Quận", "Quan"]) || getField(row, ["Tên quán", "Ten quan"])
+    getField(row, ["Quận", "Quan"]) ||
+    getField(row, ["Tên quán", "Ten quan", "Quán"])
   );
 
   if (!rows.length) {
@@ -125,7 +157,6 @@ function parseCsv(csv) {
 
   state.allData = rows;
   state.loaded = true;
-  populateDistricts();
   updateFilterOptions();
   render();
 }
@@ -168,6 +199,8 @@ async function loadData() {
         : "Đang dùng dữ liệu đã lưu trên máy.",
       window.navigator.onLine ? "success" : "offline"
     );
+
+    if (state.location) await updateDistances();
   } catch (error) {
     const cachedCsv = getCachedCsv();
 
@@ -188,6 +221,47 @@ async function loadData() {
   }
 }
 
+function getRowValues(row, filterName) {
+  if (filterName === "district") {
+    return [getField(row, ["Quận", "Quan"])];
+  }
+
+  if (filterName === "food") {
+    return splitValues(getField(row, ["Tên món", "Ten mon", "Món ăn"]));
+  }
+
+  return splitValues(getField(row, [
+    "Phân loại món",
+    "Phan loai mon",
+    "Loại món",
+    "Loai mon"
+  ]));
+}
+
+function rowMatchesValue(row, filterName, selectedValue) {
+  if (!selectedValue) return true;
+
+  const selectedKey = valueKey(selectedValue);
+  return getRowValues(row, filterName)
+    .some(value => valueKey(value) === selectedKey);
+}
+
+function rowMatchesOtherFilters(row, excludedFilter) {
+  return Object.entries(state.filters).every(([filterName, selectedValue]) =>
+    filterName === excludedFilter ||
+    !selectedValue ||
+    rowMatchesValue(row, filterName, selectedValue)
+  );
+}
+
+function getOptionsFor(filterName) {
+  return uniqueSorted(
+    state.allData
+      .filter(row => rowMatchesOtherFilters(row, filterName))
+      .flatMap(row => getRowValues(row, filterName))
+  );
+}
+
 function setSelectOptions(select, values, placeholder, selectedValue = "") {
   const fragment = document.createDocumentFragment();
   fragment.appendChild(new Option(placeholder, ""));
@@ -198,89 +272,62 @@ function setSelectOptions(select, values, placeholder, selectedValue = "") {
   }
 
   select.replaceChildren(fragment);
-  select.value = sortedValues.includes(selectedValue) ? selectedValue : "";
-  return select.value;
-}
-
-function populateDistricts() {
-  const districts = state.allData.map(row =>
-    getField(row, ["Quận", "Quan"])
-  );
-
-  state.filters.district = setSelectOptions(
-    $("districtSelect"),
-    districts,
-    "Chọn quận",
-    state.filters.district
-  );
+  select.value = sortedValues.some(value => valueKey(value) === valueKey(selectedValue))
+    ? selectedValue
+    : "";
 }
 
 function updateFilterOptions() {
-  const districtSelect = $("districtSelect");
-  const foodSelect = $("foodSelect");
-  const typeSelect = $("typeSelect");
+  const selects = {
+    district: $("districtSelect"),
+    food: $("foodSelect"),
+    type: $("typeSelect")
+  };
 
-  if (!state.filters.district) {
-    state.filters.food = "";
-    state.filters.type = "";
-    foodSelect.disabled = true;
-    typeSelect.disabled = true;
-    setSelectOptions(foodSelect, [], "Chọn món");
-    setSelectOptions(typeSelect, [], "Chọn loại món");
-    return;
+  if (!state.loaded) return;
+
+  // Reconcile invalid combinations while allowing any field to start the search.
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (const filterName of Object.keys(state.filters)) {
+      const options = getOptionsFor(filterName);
+      const current = state.filters[filterName];
+
+      if (current && !options.some(value => valueKey(value) === valueKey(current))) {
+        state.filters[filterName] = "";
+      }
+    }
   }
 
-  const districtRows = state.allData.filter(row =>
-    getField(row, ["Quận", "Quan"]) === state.filters.district
+  setSelectOptions(
+    selects.district,
+    getOptionsFor("district"),
+    "Tất cả quận",
+    state.filters.district
   );
-
-  const foods = districtRows.flatMap(row =>
-    splitValues(getField(row, ["Tên món", "Ten mon"]))
-  );
-  const types = districtRows.flatMap(row =>
-    splitValues(getField(row, ["Phân loại món", "Phan loai mon", "Loại món"]))
-  );
-
-  foodSelect.disabled = false;
-  typeSelect.disabled = false;
-  state.filters.food = setSelectOptions(
-    foodSelect,
-    foods,
+  setSelectOptions(
+    selects.food,
+    getOptionsFor("food"),
     "Tất cả món",
     state.filters.food
   );
-  state.filters.type = setSelectOptions(
-    typeSelect,
-    types,
+  setSelectOptions(
+    selects.type,
+    getOptionsFor("type"),
     "Tất cả loại món",
     state.filters.type
   );
+
+  selects.district.disabled = false;
+  selects.food.disabled = false;
+  selects.type.disabled = false;
 }
 
 function getFilteredRows() {
-  let rows = state.allData.filter(row =>
-    getField(row, ["Quận", "Quan"]) === state.filters.district
+  return state.allData.filter(row =>
+    Object.entries(state.filters).every(([filterName, selectedValue]) =>
+      !selectedValue || rowMatchesValue(row, filterName, selectedValue)
+    )
   );
-
-  if (state.filters.food) {
-    rows = rows.filter(row =>
-      splitValues(getField(row, ["Tên món", "Ten mon"]))
-        .some(value => value.toLocaleLowerCase("vi").includes(
-          state.filters.food.toLocaleLowerCase("vi")
-        ))
-    );
-  }
-
-  if (state.filters.type) {
-    rows = rows.filter(row =>
-      splitValues(getField(row, ["Phân loại món", "Phan loai mon", "Loại món"]))
-        .some(value => value.toLocaleLowerCase("vi").includes(
-          state.filters.type.toLocaleLowerCase("vi")
-        ))
-    );
-  }
-
-  return rows;
 }
 
 function safeExternalUrl(value) {
@@ -292,20 +339,184 @@ function safeExternalUrl(value) {
   }
 }
 
+function getRowAddress(row) {
+  const address = getField(row, [
+    "Địa chỉ",
+    "Dia chi",
+    "Tên đường",
+    "Ten duong",
+    "Đường"
+  ]);
+  const district = getField(row, ["Quận", "Quan"]);
+  return [address, district, "Hồ Chí Minh, Việt Nam"].filter(Boolean).join(", ");
+}
+
+function parseCoordinate(value, min, max) {
+  const number = Number.parseFloat(String(value).replace(",", "."));
+  return Number.isFinite(number) && number >= min && number <= max
+    ? number
+    : null;
+}
+
+function getRowCoordinates(row) {
+  const latitude = parseCoordinate(getField(row, [
+    "Vĩ độ", "Vi do", "Latitude", "Lat", "lat"
+  ]), -90, 90);
+  const longitude = parseCoordinate(getField(row, [
+    "Kinh độ", "Kinh do", "Longitude", "Lng", "Lon", "lng", "lon"
+  ]), -180, 180);
+
+  return latitude !== null && longitude !== null
+    ? { latitude, longitude }
+    : null;
+}
+
+function getRowImage(row) {
+  return safeExternalUrl(getField(row, [
+    "Ảnh", "Hình ảnh", "Hinh anh", "Image", "URL ảnh", "Photo"
+  ]));
+}
+
+function haversineKm(from, to) {
+  const toRadians = value => value * Math.PI / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to.latitude - from.latitude);
+  const dLon = toRadians(to.longitude - from.longitude);
+  const lat1 = toRadians(from.latitude);
+  const lat2 = toRadians(to.latitude);
+
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(distanceKm) {
+  return distanceKm < 1
+    ? Math.round(distanceKm * 1000) + " m"
+    : distanceKm.toFixed(1) + " km";
+}
+
+function readGeocodeCache() {
+  try {
+    return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeGeocodeCache(cache) {
+  try {
+    localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(cache));
+  } catch (error) {
+    console.warn("Không thể lưu vị trí quán:", error);
+  }
+}
+
+async function geocodeAddress(address) {
+  const key = valueKey(address);
+  const cache = readGeocodeCache();
+
+  if (cache[key]) return cache[key];
+
+  try {
+    const url =
+      "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=vn&q=" +
+      encodeURIComponent(address);
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" }
+    });
+
+    if (!response.ok) return null;
+    const results = await response.json();
+    const first = results?.[0];
+    const coordinates = first
+      ? {
+          latitude: Number.parseFloat(first.lat),
+          longitude: Number.parseFloat(first.lon)
+        }
+      : null;
+
+    if (!coordinates ||
+        !Number.isFinite(coordinates.latitude) ||
+        !Number.isFinite(coordinates.longitude)) {
+      return null;
+    }
+
+    cache[key] = coordinates;
+    writeGeocodeCache(cache);
+    return coordinates;
+  } catch (error) {
+    console.warn("Không thể xác định vị trí quán:", error);
+    return null;
+  }
+}
+
+async function updateDistances() {
+  if (!state.location) return;
+
+  const rows = getFilteredRows();
+  const unresolved = [];
+
+  rows.forEach(row => {
+    const coordinates = getRowCoordinates(row);
+    if (coordinates) {
+      distanceByRow.set(row, haversineKm(state.location, coordinates));
+    } else if (getRowAddress(row)) {
+      unresolved.push(row);
+    }
+  });
+
+  let geocodedCount = 0;
+  for (const row of unresolved.slice(0, MAX_GEOCODES_PER_REQUEST)) {
+    const coordinates = await geocodeAddress(getRowAddress(row));
+    if (coordinates) {
+      distanceByRow.set(row, haversineKm(state.location, coordinates));
+      geocodedCount += 1;
+    }
+
+    // Respect the public geocoding service rate limit.
+    await new Promise(resolve => window.setTimeout(resolve, 1100));
+  }
+
+  rows.sort((a, b) =>
+    (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
+    (distanceByRow.get(b) ?? Number.POSITIVE_INFINITY)
+  );
+
+  setStatus(
+    geocodedCount || rows.some(row => distanceByRow.has(row))
+      ? "Đã sắp xếp quán gần vị trí của bạn lên trước."
+      : "Chưa có tọa độ quán phù hợp để tính khoảng cách.",
+    geocodedCount || rows.some(row => distanceByRow.has(row))
+      ? "success"
+      : "offline"
+  );
+  render();
+}
+
 function renderCard(row) {
-  const restaurant = getField(row, ["Tên quán", "Ten quan"]) || "Quán ngon ẩn danh";
-  const food = getField(row, ["Tên món", "Ten mon"]);
-  const type = getField(row, ["Phân loại món", "Phan loai mon", "Loại món"]);
-  const address = getField(row, ["Tên đường", "Dia chi", "Địa chỉ"]);
+  const restaurant = getField(row, ["Tên quán", "Ten quan", "Quán"]) || "Quán ngon ẩn danh";
+  const food = getField(row, ["Tên món", "Ten mon", "Món ăn"]);
+  const type = getField(row, [
+    "Phân loại món",
+    "Phan loai mon",
+    "Loại món",
+    "Loai mon"
+  ]);
+  const address = getField(row, [
+    "Địa chỉ", "Dia chi", "Tên đường", "Ten duong", "Đường"
+  ]);
   const district = getField(row, ["Quận", "Quan"]);
   const hours = getField(row, ["Giờ mở cửa", "Gio mo cua"]);
   const price = getField(row, ["Khoảng giá", "Khoang gia", "Giá"]);
   const note = getField(row, ["Note", "Ghi chú", "Ghi chu"]);
-  const image = safeExternalUrl(getField(row, ["Ảnh", "Hình ảnh", "Image", "URL ảnh"]));
+  const image = getRowImage(row);
   const mapQuery = [address, district].filter(Boolean).join(", ");
   const mapUrl = mapQuery
     ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery)
     : "";
+  const distance = distanceByRow.get(row);
 
   const imageHtml = image
     ? '<img class="food-image" src="' + escapeHtml(image) +
@@ -322,14 +533,17 @@ function renderCard(row) {
     '<article class="result-item">' +
       '<div class="food-visual">' + imageHtml +
         '<span class="category-pill">' + escapeHtml(type || "Địa điểm ăn uống") + "</span>" +
+        (typeof distance === "number"
+          ? '<span class="distance-badge">⌖ ' + formatDistance(distance) + "</span>"
+          : "") +
       "</div>" +
       '<div class="result-content">' +
         "<h3>" + escapeHtml(restaurant) + "</h3>" +
         (details ? '<dl class="meta-list">' + details + "</dl>" : "") +
-        (address
+        (mapUrl
           ? '<a class="map-link" href="' + escapeHtml(mapUrl) +
             '" target="_blank" rel="noopener noreferrer">⌖ ' +
-            escapeHtml(address) + "</a>"
+            escapeHtml(address || district) + "</a>"
           : "") +
         (note ? '<p class="card-note">' + escapeHtml(note) + "</p>" : "") +
       "</div>" +
@@ -341,23 +555,31 @@ function render() {
   const result = $("result");
   if (!state.loaded) return;
 
-  if (!state.filters.district) {
+  const hasFilter = Object.values(state.filters).some(Boolean);
+  if (!hasFilter && !state.location) {
     result.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon" aria-hidden="true">⌖</div>' +
         "<h3>Bắt đầu khám phá</h3>" +
-        "<p>Chọn một quận để xem những quán ngon đang được gợi ý.</p>" +
+        "<p>Chọn quận, món ăn hoặc phân loại để tìm quán phù hợp.</p>" +
       "</div>";
     return;
   }
 
   const rows = getFilteredRows();
+  if (state.location) {
+    rows.sort((a, b) =>
+      (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
+      (distanceByRow.get(b) ?? Number.POSITIVE_INFINITY)
+    );
+  }
+
   if (!rows.length) {
     result.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon" aria-hidden="true">⌕</div>' +
         "<h3>Chưa tìm thấy món phù hợp</h3>" +
-        "<p>Hãy thử đổi món ăn hoặc phân loại khác nhé.</p>" +
+        "<p>Hãy thử đổi quận, món ăn hoặc phân loại khác nhé.</p>" +
       "</div>";
     return;
   }
@@ -373,15 +595,66 @@ function handleFilterChange(event) {
   }[event.target.id];
 
   if (!filterName) return;
-  state.filters[filterName] = event.target.value;
-
-  if (filterName === "district") {
-    state.filters.food = "";
-    state.filters.type = "";
-  }
-
+  state.filters[filterName] = normalise(event.target.value);
   updateFilterOptions();
   render();
+
+  if (state.location) updateDistances();
+}
+
+function setLocationButtonState(isLocating) {
+  const button = $("locationButton");
+  if (!button) return;
+  button.disabled = isLocating;
+  button.classList.toggle("is-active", Boolean(state.location));
+  button.innerHTML = isLocating
+    ? '<span aria-hidden="true">⌖</span> Đang định vị…'
+    : '<span aria-hidden="true">⌖</span> Quán gần tôi';
+}
+
+function requestLocation() {
+  if (state.locating) return;
+
+  if (!window.isSecureContext || !navigator.geolocation) {
+    setStatus("Định vị cần được mở bằng HTTPS trên Safari hoặc màn hình chính.", "error");
+    return;
+  }
+
+  if (!state.loaded) {
+    setStatus("Đang tải dữ liệu, vui lòng thử lại sau một chút.", "loading");
+    return;
+  }
+
+  state.locating = true;
+  setLocationButtonState(true);
+  setStatus("Đang xin quyền vị trí và tìm quán gần bạn…", "loading");
+
+  navigator.geolocation.getCurrentPosition(
+    async position => {
+      state.location = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+
+      await updateDistances();
+      state.locating = false;
+      setLocationButtonState(false);
+    },
+    error => {
+      state.locating = false;
+      setLocationButtonState(false);
+
+      const message = error.code === error.PERMISSION_DENIED
+        ? "Bạn chưa cho phép định vị. Hãy bật Location cho Safari trong Cài đặt iPhone."
+        : "Không lấy được vị trí hiện tại. Vui lòng thử lại.";
+      setStatus(message, "error");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 300000
+    }
+  );
 }
 
 function showInstallGuide() {
@@ -453,6 +726,7 @@ function init() {
   $("districtSelect")?.addEventListener("change", handleFilterChange);
   $("foodSelect")?.addEventListener("change", handleFilterChange);
   $("typeSelect")?.addEventListener("change", handleFilterChange);
+  $("locationButton")?.addEventListener("click", requestLocation);
   setupInstallExperience();
   registerServiceWorker();
   loadData();
