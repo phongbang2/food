@@ -1,22 +1,45 @@
 {
-  "name": "Ăn Sập Sài Gòn • Món Ngon Theo Quận",
-  "short_name": "Ăn Sập Sài Gòn • Món Ngon Theo Quận",
-  "description": "Tìm quán ăn nhanh theo quận và món",
-  "start_url": ".",
+  "name": "Ăn Sập Sài Gòn • Món ngon theo quận",
+  "short_name": "Ăn Sập Sài Gòn",
+  "description": "Khám phá quán ngon và món ăn nổi bật theo từng quận ở Sài Gòn.",
+  "id": "./",
+  "start_url": "./?source=homescreen",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f5f7",
-  "theme_color": "#f4f5f7",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",
+  "background_color": "#fffaf7",
+  "theme_color": "#ff6b35",
+  "lang": "vi",
+  "dir": "ltr",
+  "categories": ["food", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "icons/icon-180.png",
+      "src": "./icons/icon-180.png",
       "sizes": "180x180",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Khám phá món ngon",
+      "short_name": "Khám phá",
+      "url": "./",
+      "icons": [
+        {
+          "src": "./icons/icon-180.png",
+          "sizes": "180x180",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
