@@ -520,6 +520,35 @@ function escapeSvgText(value) {
   }[character]));
 }
 
+function getIllustratedImageUrl(row) {
+  const category = valueKey(getField(row, [
+    "Phân loại món",
+    "Phan loai mon",
+    "Loại món",
+    "Loai mon"
+  ]));
+
+  let photoId = "photo-1504674900247-0877df9cc836";
+  if (category.includes("bánh mì")) {
+    photoId = "photo-1601050690597-df0568f70950";
+  } else if (category.includes("cơm")) {
+    photoId = "photo-1603133872878-684f208fb84b";
+  } else if (category.includes("lẩu")) {
+    photoId = "photo-1547592180-85f173990554";
+  } else if (category.includes("món nước")) {
+    photoId = "photo-1562565652-a0d8f0c59eb4";
+  } else if (category.includes("ăn vặt")) {
+    photoId = "photo-1498837167922-ddd27525d352";
+  } else if (category.includes("quán nước")) {
+    photoId = "photo-1513558161293-cdaf765ed2fd";
+  } else if (category.includes("món khô")) {
+    photoId = "photo-1555939594-58d7cb561ad1";
+  }
+
+  return "https://images.unsplash.com/" + photoId +
+    "?auto=format&fit=crop&w=900&q=82";
+}
+
 function getFallbackIllustration(row) {
   const profile = getIllustrationProfile(row);
   const svg =
@@ -706,7 +735,7 @@ function renderCard(row) {
   const price = getField(row, ["Khoảng giá", "Khoang gia", "Giá"]);
   const note = getField(row, ["Note", "Ghi chú", "Ghi chu"]);
   const actualImage = getRowImage(row);
-  const image = actualImage || getFallbackIllustration(row);
+  const image = actualImage || getIllustratedImageUrl(row);
   const isIllustration = !actualImage;
   const mapUrl = getRowMapUrl(row);
   const mapLinkLabel = getMapLinkLabel(row);
