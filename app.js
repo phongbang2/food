@@ -3,7 +3,7 @@ const SHEET_URL =
 const DATA_CACHE_KEY = "food-finder-data-v3";
 const GEOCODE_CACHE_KEY = "food-finder-geocode-v1";
 const REQUEST_TIMEOUT_MS = 12000;
-const MAX_GEOCODES_PER_REQUEST = 12;
+const MAX_GEOCODES_PER_REQUEST = 3;
 
 const state = {
   allData: [],
@@ -457,42 +457,57 @@ async function updateDistances() {
 
   const rows = getFilteredRows();
   const unresolved = [];
+  let directCount = 0;
 
   rows.forEach(row => {
     const coordinates = getRowCoordinates(row);
     if (coordinates) {
       distanceByRow.set(row, haversineKm(state.location, coordinates));
+      directCount += 1;
     } else if (getRowAddress(row)) {
       unresolved.push(row);
     }
   });
 
-  let geocodedCount = 0;
-  for (const row of unresolved.slice(0, MAX_GEOCODES_PER_REQUEST)) {
-    const coordinates = await geocodeAddress(getRowAddress(row));
-    if (coordinates) {
-      distanceByRow.set(row, haversineKm(state.location, coordinates));
-      geocodedCount += 1;
-    }
-
-    // Respect the public geocoding service rate limit.
-    await new Promise(resolve => window.setTimeout(resolve, 1100));
-  }
-
+  // Render immediately. Geocoding must not block the location button or the UI.
   rows.sort((a, b) =>
     (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
     (distanceByRow.get(b) ?? Number.POSITIVE_INFINITY)
   );
-
   setStatus(
-    geocodedCount || rows.some(row => distanceByRow.has(row))
-      ? "Đã sắp xếp quán gần vị trí của bạn lên trước."
-      : "Chưa có tọa độ quán phù hợp để tính khoảng cách.",
-    geocodedCount || rows.some(row => distanceByRow.has(row))
-      ? "success"
-      : "offline"
+    directCount
+      ? "Đã bật vị trí — đang hiển thị quán gần bạn."
+      : "Đã bật vị trí — đang cập nhật khoảng cách ở nền.",
+    directCount ? "success" : "loading"
   );
   render();
+
+  if (unresolved.length) {
+    void geocodeRowsInBackground(unresolved.slice(0, MAX_GEOCODES_PER_REQUEST));
+  }
+}
+
+async function geocodeRowsInBackground(rows) {
+  let geocodedCount = 0;
+
+  for (const row of rows) {
+    if (!state.location) return;
+
+    const coordinates = await geocodeAddress(getRowAddress(row));
+    if (coordinates) {
+      distanceByRow.set(row, haversineKm(state.location, coordinates));
+      geocodedCount += 1;
+      render();
+    }
+
+    // Keep the public geocoding service in the background and respect its rate limit.
+    await new Promise(resolve => window.setTimeout(resolve, 1100));
+  }
+
+  if (geocodedCount) {
+    setStatus("Đã cập nhật khoảng cách và ưu tiên quán gần bạn nhất.", "success");
+    render();
+  }
 }
 
 function renderCard(row) {
@@ -636,9 +651,9 @@ function requestLocation() {
         longitude: position.coords.longitude
       };
 
-      await updateDistances();
       state.locating = false;
       setLocationButtonState(false);
+      updateDistances();
     },
     error => {
       state.locating = false;
@@ -650,9 +665,9 @@ function requestLocation() {
       setStatus(message, "error");
     },
     {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 300000
+      enableHighAccuracy: false,
+      timeout: 7000,
+      maximumAge: 600000
     }
   );
 }
