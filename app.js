@@ -477,6 +477,81 @@ function getRowImage(row) {
   ]));
 }
 
+function getIllustrationProfile(row) {
+  const category = valueKey(getField(row, [
+    "Phân loại món",
+    "Phan loai mon",
+    "Loại món",
+    "Loai mon"
+  ]));
+
+  if (category.includes("bánh mì")) {
+    return { label: "BÁNH MÌ", from: "#f97316", to: "#facc15" };
+  }
+  if (category.includes("cơm")) {
+    return { label: "CƠM NGON", from: "#0f766e", to: "#22c55e" };
+  }
+  if (category.includes("lẩu")) {
+    return { label: "LẨU", from: "#dc2626", to: "#fb923c" };
+  }
+  if (category.includes("món nước")) {
+    return { label: "MÓN NƯỚC", from: "#7c3aed", to: "#ec4899" };
+  }
+  if (category.includes("ăn vặt")) {
+    return { label: "ĂN VẶT", from: "#db2777", to: "#f97316" };
+  }
+  if (category.includes("quán nước")) {
+    return { label: "ĐỒ UỐNG", from: "#0369a1", to: "#22d3ee" };
+  }
+  if (category.includes("món khô")) {
+    return { label: "MÓN NGON", from: "#b45309", to: "#f59e0b" };
+  }
+
+  return { label: "ĂN NGON", from: "#ea580c", to: "#fbbf24" };
+}
+
+function escapeSvgText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&apos;"
+  }[character]));
+}
+
+function getFallbackIllustration(row) {
+  const profile = getIllustrationProfile(row);
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">' +
+      '<defs>' +
+        '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0%" stop-color="' + profile.from + '"/>' +
+          '<stop offset="100%" stop-color="' + profile.to + '"/>' +
+        '</linearGradient>' +
+        '<filter id="shadow"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-opacity=".22"/></filter>' +
+      '</defs>' +
+      '<rect width="800" height="500" fill="url(#bg)"/>' +
+      '<circle cx="690" cy="70" r="150" fill="#ffffff" opacity=".13"/>' +
+      '<circle cx="90" cy="440" r="180" fill="#ffffff" opacity=".1"/>' +
+      '<g filter="url(#shadow)">' +
+        '<ellipse cx="400" cy="325" rx="190" ry="46" fill="#fff" opacity=".94"/>' +
+        '<path d="M225 316c18 122 76 151 175 151s157-29 175-151z" fill="#fff" opacity=".96"/>' +
+        '<ellipse cx="400" cy="316" rx="174" ry="39" fill="#fde68a"/>' +
+        '<path d="M285 303c45-56 75 23 115-24 35-41 65 36 105-10 28-31 47 12 63 31" fill="none" stroke="#f97316" stroke-width="22" stroke-linecap="round"/>' +
+        '<path d="M310 230L245 140M354 225L303 125M445 225L504 125M490 230L560 145" stroke="#fff" stroke-width="13" stroke-linecap="round" opacity=".86"/>' +
+      '</g>' +
+      '<text x="400" y="92" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="4">' +
+        escapeSvgText(profile.label) +
+      '</text>' +
+      '<text x="400" y="455" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" opacity=".86">' +
+        'ẢNH MINH HOẠ • ĂN SẬP SÀI GÒN' +
+      '</text>' +
+    '</svg>';
+
+  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+}
+
 function haversineKm(from, to) {
   const toRadians = value => value * Math.PI / 180;
   const earthRadiusKm = 6371;
@@ -630,15 +705,16 @@ function renderCard(row) {
   const hours = getField(row, ["Giờ mở cửa", "Gio mo cua"]);
   const price = getField(row, ["Khoảng giá", "Khoang gia", "Giá"]);
   const note = getField(row, ["Note", "Ghi chú", "Ghi chu"]);
-  const image = getRowImage(row);
+  const actualImage = getRowImage(row);
+  const image = actualImage || getFallbackIllustration(row);
+  const isIllustration = !actualImage;
   const mapUrl = getRowMapUrl(row);
   const mapLinkLabel = getMapLinkLabel(row);
   const distance = distanceByRow.get(row);
 
-  const imageHtml = image
-    ? '<img class="food-image" src="' + escapeHtml(image) +
-      '" alt="' + escapeHtml(restaurant) + '" loading="lazy" />'
-    : '<div class="food-image-placeholder" aria-hidden="true">🍜</div>';
+  const imageHtml =
+    '<img class="food-image" src="' + escapeHtml(image) +
+    '" alt="' + escapeHtml(restaurant) + '" loading="lazy" />';
 
   const details = [
     food ? "<div><dt>Món</dt><dd>" + escapeHtml(food) + "</dd></div>" : "",
@@ -650,6 +726,9 @@ function renderCard(row) {
     '<article class="result-item">' +
       '<div class="food-visual">' + imageHtml +
         '<span class="category-pill">' + escapeHtml(type || "Địa điểm ăn uống") + "</span>" +
+        (isIllustration
+          ? '<span class="image-source-badge">Ảnh minh hoạ</span>'
+          : "") +
         (typeof distance === "number"
           ? '<span class="distance-badge">⌖ ' + formatDistance(distance) + "</span>"
           : "") +
