@@ -218,7 +218,7 @@
       } catch (error) {
         state.candidates = [];
         renderDiscovery();
-        message("discoveryMessage", error.message || "Nguồn tìm kiếm đang bận.", "error");
+        message("discoveryMessage", error && error.message ? error.message : String(error || "Nguồn tìm kiếm đang bận."), "error");
       } finally {
         button.disabled = false;
         button.classList.remove("loading-button");
@@ -247,7 +247,7 @@
         renderDiscovery();
         await refresh();
       } catch (error) {
-        message("discoveryMessage", error.message || "Không thể đưa vào hàng chờ.", "error");
+        message("discoveryMessage", error && error.message ? error.message : String(error || "Không thể đưa vào hàng chờ."), "error");
       } finally {
         button.disabled = false;
         button.textContent = "Đưa lựa chọn vào hàng chờ";
