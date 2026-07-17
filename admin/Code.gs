@@ -262,7 +262,10 @@ function discoverOsmPlaces(options) {
   }
 
   if (!payload) {
-    throw new Error("Nguồn OpenStreetMap đang bận hoặc giới hạn truy cập (" +
+    const fallback = discoverArcgisPlaces_(requestedDistrict, requestedCategory);
+    if (fallback.candidates.length) return fallback;
+
+    throw new Error("Các nguồn dữ liệu địa điểm đều không phản hồi (" +
       lastStatus + "). Vui lòng thử lại sau 1 phút.");
   }
 
@@ -289,6 +292,150 @@ function discoverOsmPlaces(options) {
     attribution: "Dữ liệu OpenStreetMap — cần kiểm tra lại trước khi duyệt.",
     candidates: candidates.slice(0, 60)
   };
+}
+
+function discoverArcgisPlaces_(requestedDistrict, requestedCategory) {
+  const baseUrl = "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/Food_in_HCM/FeatureServer/0/query";
+  const params = [
+    "where=" + encodeURIComponent("1=1"),
+    "outFields=*",
+    "returnGeometry=true",
+    "resultRecordCount=200",
+    "f=json"
+  ].join("&");
+
+  try {
+    const response = UrlFetchApp.fetch(baseUrl + "?" + params, {
+      method: "get",
+      headers: { "User-Agent": "AnSapSaiGon-food-discovery/1.0" },
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+
+    if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
+      return { source: "ArcGIS Food_in_HCM", candidates: [] };
+    }
+
+    const payload = JSON.parse(response.getContentText() || "{}");
+    const knownKeys = getKnownRestaurantKeys_();
+    const candidates = (payload.features || [])
+      .map(feature => mapArcgisFeature_(feature, requestedDistrict))
+      .filter(Boolean)
+      .filter(candidate => !requestedDistrict ||
+        !candidate.district ||
+        normalize_(candidate.district).includes(normalize_(requestedDistrict)))
+      .filter(candidate => requestedCategory === "all" ||
+        candidate.sourceCategory === requestedCategory)
+      .map(candidate => {
+        candidate.duplicate = knownKeys.has(restaurantKey_(candidate));
+        delete candidate.sourceCategory;
+        return candidate;
+      })
+      .sort((first, second) =>
+        Number(first.duplicate) - Number(second.duplicate) ||
+        first.name.localeCompare(second.name, "vi")
+      );
+
+    return {
+      source: "ArcGIS Food_in_HCM",
+      attribution: "Dữ liệu bản đồ công khai; cần kiểm tra lại trước khi duyệt.",
+      candidates: candidates.slice(0, 60)
+    };
+  } catch (error) {
+    return { source: "ArcGIS Food_in_HCM", candidates: [] };
+  }
+}
+
+function mapArcgisFeature_(feature, requestedDistrict) {
+  const attributes = feature && feature.attributes || {};
+  const keys = Object.keys(attributes);
+  if (!keys.length) return null;
+
+  const read = aliases => {
+    const exactKey = keys.find(key =>
+      aliases.some(alias => normalize_(key) === normalize_(alias)));
+    if (exactKey && attributes[exactKey] !== null && attributes[exactKey] !== undefined) {
+      return String(attributes[exactKey]).trim();
+    }
+
+    const partialKey = keys.find(key => {
+      const normalized = normalize_(key);
+      return aliases.some(alias => normalized.includes(normalize_(alias)));
+    });
+    return partialKey && attributes[partialKey] !== null &&
+      attributes[partialKey] !== undefined
+      ? String(attributes[partialKey]).trim()
+      : "";
+  };
+
+  const name = read(["name", "ten quan", "ten nha hang", "restaurant", "title"]);
+  if (!name) return null;
+
+  const street = read(["address", "dia chi", "street", "duong", "location"]);
+  const district = read(["district", "quan", "huyen", "suburb"]) || requestedDistrict;
+  const rawCategory = read(["category", "loai", "type", "cuisine", "food"]);
+  const sourceCategory = mapArcgisCategory_(rawCategory, name);
+  const food = rawCategory || "Món ăn đang cập nhật";
+  const coordinates = webMercatorToWgs84_(feature.geometry);
+  const objectId = read(["objectid", "fid", "id"]);
+  const source = objectId
+    ? "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/Food_in_HCM/FeatureServer/0/query?where=" +
+      encodeURIComponent("OBJECTID=" + objectId) + "&outFields=*&f=pjson"
+    : "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/Food_in_HCM/FeatureServer/0";
+
+  return {
+    id: "arcgis-" + (objectId || name),
+    name: name,
+    food: food,
+    type: sourceCategory,
+    sourceCategory: sourceCategory === "Bánh mì" ? "bakery" :
+      sourceCategory === "Quán nước" ? "cafe" :
+      sourceCategory === "Fastfood" ? "fastfood" :
+      "restaurant",
+    street: street,
+    district: district,
+    hours: read(["opening hours", "gio mo cua", "hours"]),
+    note: "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa.",
+    source: source,
+    mapUrl: coordinates
+      ? "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(coordinates.latitude + "," + coordinates.longitude)
+      : "",
+    duplicate: false
+  };
+}
+
+function mapArcgisCategory_(rawCategory, name) {
+  const text = normalize_(rawCategory + " " + name);
+  if (text.includes("bakery") || text.includes("banh mi") || text.includes("bread")) {
+    return "Bánh mì";
+  }
+  if (text.includes("cafe") || text.includes("coffee") || text.includes("drink")) {
+    return "Quán nước";
+  }
+  if (text.includes("fast") || text.includes("burger") || text.includes("pizza")) {
+    return "Fastfood";
+  }
+  if (text.includes("rice") || text.includes("com")) {
+    return "Cơm";
+  }
+  return "Món khô";
+}
+
+function webMercatorToWgs84_(geometry) {
+  if (!geometry || !Number.isFinite(Number(geometry.x)) ||
+      !Number.isFinite(Number(geometry.y))) return null;
+
+  const x = Number(geometry.x);
+  const y = Number(geometry.y);
+  const longitude = x / 20037508.34 * 180;
+  let latitude = y / 20037508.34 * 180;
+  latitude = 180 / Math.PI *
+    (2 * Math.atan(Math.exp(latitude * Math.PI / 180)) - Math.PI / 2);
+
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? { latitude, longitude }
+    : null;
 }
 
 function saveOsmCandidates(candidates) {
