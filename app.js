@@ -341,15 +341,30 @@ function safeExternalUrl(value) {
 }
 
 function getRowAddress(row) {
-  const address = getField(row, [
+  const fullAddress = getField(row, [
+    "Địa chỉ đầy đủ",
+    "Dia chi day du",
+    "Địa chỉ quán",
+    "Dia chi quan",
     "Địa chỉ",
-    "Dia chi",
+    "Dia chi"
+  ]);
+
+  if (fullAddress) {
+    return fullAddress;
+  }
+
+  const street = getField(row, [
     "Tên đường",
     "Ten duong",
-    "Đường"
+    "Đường",
+    "Duong"
   ]);
   const district = getField(row, ["Quận", "Quan"]);
-  return [address, district, "Hồ Chí Minh, Việt Nam"].filter(Boolean).join(", ");
+
+  return [street, district, "Hồ Chí Minh, Việt Nam"]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function parseCoordinate(value, min, max) {
@@ -370,6 +385,50 @@ function getRowCoordinates(row) {
   return latitude !== null && longitude !== null
     ? { latitude, longitude }
     : null;
+}
+
+function getDirectMapUrl(row) {
+  const directUrl = getField(row, [
+    "Google Maps URL",
+    "Google Map URL",
+    "Google Maps",
+    "Google Map",
+    "Link Google Maps",
+    "Link Google Map",
+    "Đường dẫn Google Maps",
+    "Duong dan Google Maps",
+    "Maps URL",
+    "Maps"
+  ]);
+
+  const safeUrl = safeExternalUrl(directUrl);
+  return safeUrl && /(^|\\.)((google\\.com\\/maps)|(maps\\.app\\.goo\\.gl)|(goo\\.gl\\/maps))($|\\/)/i.test(new URL(safeUrl).hostname + new URL(safeUrl).pathname)
+    ? safeUrl
+    : "";
+}
+
+function getRowMapUrl(row) {
+  const directUrl = getDirectMapUrl(row);
+  if (directUrl) return directUrl;
+
+  const coordinates = getRowCoordinates(row);
+  if (coordinates) {
+    return "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(coordinates.latitude + "," + coordinates.longitude);
+  }
+
+  const address = getRowAddress(row);
+  return address
+    ? "https://www.google.com/maps/search/?api=1&query=" +
+      encodeURIComponent(address)
+    : "";
+}
+
+function getMapLinkLabel(row) {
+  if (getDirectMapUrl(row) || getRowCoordinates(row)) {
+    return "Mở đúng vị trí trên Google Maps";
+  }
+  return "Tìm địa chỉ trên Google Maps";
 }
 
 function getRowImage(row) {
@@ -532,10 +591,8 @@ function renderCard(row) {
   const price = getField(row, ["Khoảng giá", "Khoang gia", "Giá"]);
   const note = getField(row, ["Note", "Ghi chú", "Ghi chu"]);
   const image = getRowImage(row);
-  const mapQuery = [address, district].filter(Boolean).join(", ");
-  const mapUrl = mapQuery
-    ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery)
-    : "";
+  const mapUrl = getRowMapUrl(row);
+  const mapLinkLabel = getMapLinkLabel(row);
   const distance = distanceByRow.get(row);
 
   const imageHtml = image
@@ -563,7 +620,7 @@ function renderCard(row) {
         (mapUrl
           ? '<a class="map-link" href="' + escapeHtml(mapUrl) +
             '" target="_blank" rel="noopener noreferrer">⌖ ' +
-            escapeHtml(address || district) + "</a>"
+            escapeHtml(mapLinkLabel) + "</a>"
           : "") +
         (note ? '<p class="card-note">' + escapeHtml(note) + "</p>" : "") +
       "</div>" +
