@@ -484,12 +484,17 @@ function getIllustrationProfile(row) {
     "Loại món",
     "Loai mon"
   ]));
+  const food = valueKey(getField(row, [
+    "Tên món",
+    "Ten mon",
+    "Món ăn"
+  ]));
 
-  if (category.includes("bánh mì")) {
+  if (category.includes("bánh mì") || food.includes("bánh mì")) {
     return { label: "BÁNH MÌ", from: "#f97316", to: "#facc15" };
   }
-  if (category.includes("cơm")) {
-    return { label: "CƠM NGON", from: "#0f766e", to: "#22c55e" };
+  if (category.includes("cơm") || food.includes("cơm tấm")) {
+    return { label: "CƠM TẤM", from: "#0f766e", to: "#22c55e" };
   }
   if (category.includes("lẩu")) {
     return { label: "LẨU", from: "#dc2626", to: "#fb923c" };
