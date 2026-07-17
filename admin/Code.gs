@@ -221,6 +221,219 @@ function rejectReview(reviewId, reason) {
   return { status: "Từ chối" };
 }
 
+
+function discoverOsmPlaces(options) {
+  const requestedDistrict = String(options && options.district || "").trim();
+  const requestedCategory = String(options && options.category || "all").trim();
+  const query = buildOverpassQuery_(requestedCategory);
+
+  const response = UrlFetchApp.fetch("https://overpass-api.de/api/interpreter", {
+    method: "post",
+    payload: { data: query },
+    contentType: "application/x-www-form-urlencoded",
+    headers: { "User-Agent": "AnSapSaiGon-food-discovery/1.0" },
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
+    throw new Error("Nguồn OpenStreetMap đang bận. Vui lòng thử lại sau.");
+  }
+
+  const payload = JSON.parse(response.getContentText() || "{}");
+  const knownKeys = getKnownRestaurantKeys_();
+  const candidates = (payload.elements || [])
+    .map(element => mapOsmElement_(element, requestedDistrict))
+    .filter(Boolean)
+    .filter(candidate => {
+      if (!requestedDistrict) return true;
+      return normalize_(candidate.district).includes(normalize_(requestedDistrict)) ||
+        !candidate.district;
+    })
+    .map(candidate => {
+      candidate.duplicate = knownKeys.has(restaurantKey_(candidate));
+      return candidate;
+    })
+    .sort((first, second) =>
+      Number(first.duplicate) - Number(second.duplicate) ||
+      first.name.localeCompare(second.name, "vi")
+    );
+
+  return {
+    source: "OpenStreetMap contributors",
+    attribution: "Dữ liệu OpenStreetMap — cần kiểm tra lại trước khi duyệt.",
+    candidates: candidates.slice(0, 60)
+  };
+}
+
+function saveOsmCandidates(candidates) {
+  if (!Array.isArray(candidates) || !candidates.length) {
+    throw new Error("Chưa chọn quán nào.");
+  }
+
+  const selected = candidates.slice(0, 30).filter(candidate => !candidate.duplicate);
+  if (!selected.length) {
+    return { added: 0, skipped: candidates.length, message: "Các quán đã chọn đều trùng dữ liệu hiện có." };
+  }
+
+  let added = 0;
+  let skipped = candidates.length - selected.length;
+
+  selected.forEach(candidate => {
+    try {
+      saveReview({
+        action: "ADD",
+        name: candidate.name,
+        food: candidate.food || "Món ăn đang cập nhật",
+        type: candidate.type || "Món khô",
+        street: candidate.street || "Chưa rõ địa chỉ",
+        district: candidate.district,
+        hours: candidate.hours || "",
+        price: "",
+        note: candidate.note || "",
+        source: candidate.source,
+        reason: "Đề xuất từ OpenStreetMap; cần kiểm tra thực tế."
+      });
+      added += 1;
+    } catch (error) {
+      skipped += 1;
+    }
+  });
+
+  return {
+    added: added,
+    skipped: skipped,
+    message: "Đã đưa " + added + " quán vào hàng chờ review."
+  };
+}
+
+function buildOverpassQuery_(category) {
+  const bbox = "10.33,106.35,11.15,107.05";
+  const filters = {
+    all: [
+      'nwr["amenity"~"restaurant|cafe|fast_food|food_court|bar|pub"](' + bbox + ');',
+      'nwr["shop"~"bakery|pastry|confectionery"](' + bbox + ');'
+    ],
+    restaurant: ['nwr["amenity"="restaurant"](' + bbox + ');'],
+    cafe: ['nwr["amenity"="cafe"](' + bbox + ');'],
+    fastfood: ['nwr["amenity"="fast_food"](' + bbox + ');'],
+    bakery: ['nwr["shop"~"bakery|pastry|confectionery"](' + bbox + ');']
+  };
+
+  const statements = filters[category] || filters.all;
+  return "[out:json][timeout:25];(" + statements.join("") + ");out center tags;";
+}
+
+function mapOsmElement_(element, requestedDistrict) {
+  const tags = element.tags || {};
+  const name = String(tags["name:vi"] || tags.name || "").trim();
+  if (!name) return null;
+
+  const position = element.lat && element.lon
+    ? { latitude: element.lat, longitude: element.lon }
+    : element.center && element.center.lat && element.center.lon
+      ? { latitude: element.center.lat, longitude: element.center.lon }
+      : null;
+  if (!position) return null;
+
+  const street = [
+    tags["addr:housenumber"] || "",
+    tags["addr:street"] || ""
+  ].join(" ").trim();
+  const district = String(
+    tags["addr:district"] ||
+    tags["addr:city_district"] ||
+    tags["addr:suburb"] ||
+    requestedDistrict ||
+    ""
+  ).trim();
+
+  const type = mapOsmCategory_(tags);
+  const food = mapOsmCuisine_(tags);
+  const objectPath = String(element.type || "node") + "/" + element.id;
+  const source = "https://www.openstreetmap.org/" + objectPath;
+  const mapUrl = "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(position.latitude + "," + position.longitude);
+
+  return {
+    id: objectPath,
+    name: name,
+    food: food,
+    type: type,
+    street: street,
+    district: district,
+    hours: String(tags.opening_hours || "").trim(),
+    note: [
+      tags.cuisine ? "Cuisine OSM: " + tags.cuisine : "",
+      "Tọa độ: " + position.latitude + ", " + position.longitude,
+      "Cần xác minh tên, địa chỉ và giờ mở cửa."
+    ].filter(Boolean).join(" • "),
+    source: source,
+    mapUrl: mapUrl,
+    duplicate: false
+  };
+}
+
+function mapOsmCategory_(tags) {
+  const amenity = String(tags.amenity || "").toLowerCase();
+  const shop = String(tags.shop || "").toLowerCase();
+  const cuisine = String(tags.cuisine || "").toLowerCase();
+
+  if (shop === "bakery" || shop === "pastry" || shop === "confectionery" ||
+      cuisine.includes("banh_mi") || cuisine.includes("sandwich")) return "Bánh mì";
+  if (amenity === "cafe") return "Quán nước";
+  if (amenity === "fast_food") return "Fastfood";
+  if (cuisine.includes("rice") || cuisine.includes("com")) return "Cơm";
+  if (amenity === "bar" || amenity === "pub") return "Nhậu nhẹt";
+  return "Món khô";
+}
+
+function mapOsmCuisine_(tags) {
+  const cuisine = String(tags.cuisine || "").trim().toLowerCase();
+  if (!cuisine) return "Món ăn đang cập nhật";
+  if (cuisine.includes("coffee") || cuisine.includes("cafe")) return "Cà phê";
+  if (cuisine.includes("vietnamese")) return "Món Việt";
+  if (cuisine.includes("rice") || cuisine.includes("com")) return "Cơm";
+  if (cuisine.includes("noodle") || cuisine.includes("pho")) return "Món nước";
+  if (cuisine.includes("pizza")) return "Pizza";
+  if (cuisine.includes("burger")) return "Burger";
+  return cuisine.replace(/[_;]+/g, " ");
+}
+
+function getKnownRestaurantKeys_() {
+  const keys = new Set();
+  const dataSheet = getDataSheet_();
+  const lastRow = dataSheet.getLastRow();
+
+  if (lastRow >= 2) {
+    dataSheet.getRange(2, 2, lastRow - 1, 5).getDisplayValues()
+      .forEach(row => keys.add(restaurantKey_({
+        name: row[0],
+        street: row[3],
+        district: row[4]
+      })));
+  }
+
+  const reviewSheet = getSpreadsheet_().getSheetByName(CONFIG.REVIEW_SHEET);
+  if (reviewSheet && reviewSheet.getLastRow() >= 2) {
+    reviewSheet.getRange(2, 4, reviewSheet.getLastRow() - 1, 5).getDisplayValues()
+      .forEach(row => keys.add(restaurantKey_({
+        name: row[0],
+        street: row[3],
+        district: row[4]
+      })));
+  }
+
+  return keys;
+}
+
+function restaurantKey_(restaurant) {
+  return [
+    normalize_(restaurant.name),
+    normalize_(restaurant.street),
+    normalize_(restaurant.district)
+  ].join("|");
+}
+
 function getSpreadsheet_() {
   return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
 }
