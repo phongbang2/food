@@ -225,21 +225,46 @@ function rejectReview(reviewId, reason) {
 function discoverOsmPlaces(options) {
   const requestedDistrict = String(options && options.district || "").trim();
   const requestedCategory = String(options && options.category || "all").trim();
-  const query = buildOverpassQuery_(requestedCategory);
+  const query = buildOverpassQuery_(requestedCategory, requestedDistrict);
+  const endpoints = [
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.nchc.org.tw/api/interpreter"
+  ];
 
-  const response = UrlFetchApp.fetch("https://overpass-api.de/api/interpreter", {
-    method: "post",
-    payload: { data: query },
-    contentType: "application/x-www-form-urlencoded",
-    headers: { "User-Agent": "AnSapSaiGon-food-discovery/1.0" },
-    muteHttpExceptions: true
-  });
+  let lastStatus = "";
+  let payload = null;
 
-  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
-    throw new Error("Nguồn OpenStreetMap đang bận. Vui lòng thử lại sau.");
+  for (const endpoint of endpoints) {
+    try {
+      const response = UrlFetchApp.fetch(endpoint, {
+        method: "post",
+        payload: { data: query },
+        contentType: "application/x-www-form-urlencoded",
+        headers: { "User-Agent": "AnSapSaiGon-food-discovery/1.0" },
+        muteHttpExceptions: true,
+        followRedirects: true
+      });
+
+      lastStatus = String(response.getResponseCode());
+      if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
+        continue;
+      }
+
+      const text = response.getContentText() || "";
+      if (!text.trim().startsWith("{")) continue;
+      payload = JSON.parse(text);
+      break;
+    } catch (error) {
+      lastStatus = String(error.message || error);
+    }
   }
 
-  const payload = JSON.parse(response.getContentText() || "{}");
+  if (!payload) {
+    throw new Error("Nguồn OpenStreetMap đang bận hoặc giới hạn truy cập (" +
+      lastStatus + "). Vui lòng thử lại sau 1 phút.");
+  }
+
   const knownKeys = getKnownRestaurantKeys_();
   const candidates = (payload.elements || [])
     .map(element => mapOsmElement_(element, requestedDistrict))
@@ -306,21 +331,47 @@ function saveOsmCandidates(candidates) {
   };
 }
 
-function buildOverpassQuery_(category) {
-  const bbox = "10.33,106.35,11.15,107.05";
+function buildOverpassQuery_(category, district) {
+  const bbox = getOsmBbox_(district);
   const filters = {
     all: [
-      'nwr["amenity"~"restaurant|cafe|fast_food|food_court|bar|pub"](' + bbox + ');',
-      'nwr["shop"~"bakery|pastry|confectionery"](' + bbox + ');'
+      'nwr["amenity"~"restaurant|cafe|fast_food|food_court|bar|pub"]["name"](' + bbox + ');',
+      'nwr["shop"~"bakery|pastry|confectionery"]["name"](' + bbox + ');'
     ],
-    restaurant: ['nwr["amenity"="restaurant"](' + bbox + ');'],
-    cafe: ['nwr["amenity"="cafe"](' + bbox + ');'],
-    fastfood: ['nwr["amenity"="fast_food"](' + bbox + ');'],
-    bakery: ['nwr["shop"~"bakery|pastry|confectionery"](' + bbox + ');']
+    restaurant: ['nwr["amenity"="restaurant"]["name"](' + bbox + ');'],
+    cafe: ['nwr["amenity"="cafe"]["name"](' + bbox + ');'],
+    fastfood: ['nwr["amenity"="fast_food"]["name"](' + bbox + ');'],
+    bakery: ['nwr["shop"~"bakery|pastry|confectionery"]["name"](' + bbox + ');']
   };
 
   const statements = filters[category] || filters.all;
-  return "[out:json][timeout:25];(" + statements.join("") + ");out center tags;";
+  return "[out:json][timeout:20];(" + statements.join("") + ");out center tags;";
+}
+
+function getOsmBbox_(district) {
+  const key = normalize_(district);
+  const bboxes = {
+    "quan 1": "10.755,106.680,10.790,106.715",
+    "quan 2": "10.745,106.720,10.825,106.800",
+    "quan 3": "10.770,106.675,10.795,106.710",
+    "quan 4": "10.745,106.695,10.775,106.730",
+    "quan 5": "10.735,106.650,10.775,106.695",
+    "quan 6": "10.725,106.625,10.755,106.670",
+    "quan 7": "10.690,106.700,10.755,106.775",
+    "quan 8": "10.690,106.650,10.750,106.735",
+    "quan 10": "10.755,106.655,10.785,106.690",
+    "quan 11": "10.745,106.635,10.775,106.675",
+    "quan 12": "10.820,106.620,10.900,106.720",
+    "binh thanh": "10.785,106.700,10.835,106.755",
+    "phu nhuan": "10.785,106.660,10.815,106.705",
+    "tan binh": "10.775,106.615,10.835,106.700",
+    "tan phu": "10.765,106.605,10.820,106.670",
+    "go vap": "10.805,106.635,10.875,106.720",
+    "binh tan": "10.680,106.580,10.780,106.670",
+    "thu duc": "10.780,106.760,10.950,106.900"
+  };
+
+  return bboxes[key] || "10.33,106.35,11.15,107.05";
 }
 
 function mapOsmElement_(element, requestedDistrict) {
