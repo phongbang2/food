@@ -227,9 +227,10 @@ function discoverOsmPlaces(options) {
   const requestedCategory = String(options && options.category || "all").trim();
   const query = buildOverpassQuery_(requestedCategory, requestedDistrict);
   const endpoints = [
-    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
     "https://overpass-api.de/api/interpreter",
-    "https://overpass.nchc.org.tw/api/interpreter"
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
   ];
 
   let lastStatus = "";
