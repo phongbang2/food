@@ -222,6 +222,28 @@ function rejectReview(reviewId, reason) {
 }
 
 
+function authorizeExternalSources() {
+  const urls = [
+    "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/Food_in_HCM/FeatureServer/0?f=json",
+    "https://overpass.private.coffee/api/interpreter"
+  ];
+
+  const results = urls.map(url => {
+    try {
+      const response = UrlFetchApp.fetch(url, {
+        method: "get",
+        muteHttpExceptions: true,
+        followRedirects: true
+      });
+      return response.getResponseCode();
+    } catch (error) {
+      return String(error.message || error);
+    }
+  });
+
+  return "Đã kiểm tra quyền nguồn ngoài: " + results.join(", ");
+}
+
 function discoverOsmPlaces(options) {
   const requestedDistrict = String(options && options.district || "").trim();
   const requestedCategory = String(options && options.category || "all").trim();
