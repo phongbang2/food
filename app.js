@@ -463,7 +463,17 @@ function getMapLinkLabel(row) {
 
 function getRowImage(row) {
   return safeExternalUrl(getField(row, [
-    "Ảnh", "Hình ảnh", "Hinh anh", "Image", "URL ảnh", "Photo"
+    "Ảnh quán",
+    "Anh quan",
+    "Photo URL",
+    "Image URL",
+    "Ảnh URL",
+    "URL ảnh",
+    "Ảnh",
+    "Hình ảnh",
+    "Hinh anh",
+    "Image",
+    "Photo"
   ]));
 }
 
