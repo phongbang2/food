@@ -341,11 +341,11 @@ def canonical_district(value: str, allowed: list[str]) -> str:
     for item in allowed:
         if normalize(item) == wanted:
             return item
-    wanted_key = re.sub(r"^(quan|district|huyen|q)\\s*", "", wanted)
+    wanted_key = re.sub(r"^(quan|district|huyen|q)\s*", "", wanted)
     wanted_key = wanted_key.replace("thanh pho ", "").strip()
     for item in allowed:
         item_key = normalize(item)
-        item_key = re.sub(r"^(quan|district|huyen|q)\\s*", "", item_key)
+        item_key = re.sub(r"^(quan|district|huyen|q)\s*", "", item_key)
         item_key = item_key.replace("thanh pho ", "").strip()
         if item_key == wanted_key:
             return item
