@@ -645,3 +645,17 @@ footer span { color: var(--primary-dark); font-weight: 700; }
     align-items: center;
   }
 }
+
+/* Keep the brand row in normal flow so it never covers the hero artwork. */
+.hero-topbar {
+  position: static;
+  width: 100%;
+  margin: 0 auto 1.15rem;
+}
+
+@media (max-width: 680px) {
+  .hero-topbar {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+}
