@@ -567,75 +567,86 @@ function getFallbackIllustration(row) {
 
   if (category.includes("bánh mì") || food.includes("bánh mì")) {
     foodArt =
-      '<ellipse cx="400" cy="350" rx="270" ry="54" fill="#fff" opacity=".95"/>' +
-      '<path d="M190 292c0-43 35-78 78-78h264c43 0 78 35 78 78v22H190z" fill="#d97706"/>' +
-      '<path d="M190 292c0-43 35-78 78-78h264c43 0 78 35 78 78v15H190z" fill="#f59e0b"/>' +
-      '<path d="M205 307h590v31H205z" fill="#65a30d"/>' +
-      '<path d="M205 338h590v22H205z" fill="#dc2626"/>' +
-      '<path d="M212 360h576c-16 30-42 49-77 49H289c-35 0-61-19-77-49z" fill="#b45309"/>' +
-      '<path d="M282 239l-9-17M352 233l-5-20M426 233l4-20M499 233l10-18M568 242l14-15" stroke="#fde68a" stroke-width="10" stroke-linecap="round"/>' +
-      '<path d="M250 323c21-12 38-12 59 0M382 323c21-12 38-12 59 0M514 323c21-12 38-12 59 0" fill="none" stroke="#bbf7d0" stroke-width="9" stroke-linecap="round"/>' +
-      '<circle cx="680" cy="325" r="10" fill="#fef08a"/>' +
-      '<circle cx="710" cy="348" r="8" fill="#fef08a"/>';
+      '<g transform="translate(0 15) rotate(-5 400 290)">' +
+        '<path d="M175 286c0-46 37-83 83-83h284c46 0 83 37 83 83v19H175z" fill="#f59e0b"/>' +
+        '<path d="M174 297h452v25H174z" fill="#65a30d"/>' +
+        '<path d="M174 322h452v19H174z" fill="#ef4444"/>' +
+        '<path d="M188 341h424c-16 36-47 55-91 55H279c-44 0-75-19-91-55z" fill="#b45309"/>' +
+        '<path d="M252 226l-8-18M326 218l-5-20M402 218l4-20M478 222l10-18M548 238l14-16" stroke="#fde68a" stroke-width="11" stroke-linecap="round"/>' +
+        '<path d="M235 315c26-15 48-15 73 0M364 315c26-15 48-15 73 0M493 315c26-15 48-15 73 0" fill="none" stroke="#bbf7d0" stroke-width="10" stroke-linecap="round"/>' +
+        '<circle cx="612" cy="317" r="11" fill="#fef08a"/><circle cx="642" cy="339" r="8" fill="#fef08a"/>' +
+      '</g>';
   } else if (category.includes("cơm") || food.includes("cơm tấm")) {
     foodArt =
-      '<ellipse cx="400" cy="358" rx="270" ry="58" fill="#fff" opacity=".96"/>' +
-      '<ellipse cx="400" cy="337" rx="226" ry="65" fill="#f8fafc"/>' +
-      '<path d="M245 325c22-100 80-128 155-128s133 28 155 128c-44 27-93 40-155 40s-111-13-155-40z" fill="#fff7ed"/>' +
-      '<path d="M278 302c23-31 48-42 71-51M316 330c18-35 45-55 68-68M365 337c11-44 31-70 49-87M424 337c4-42 20-69 38-88M480 327c-4-37-1-61 14-82M529 310c-13-31-14-49-6-68" stroke="#d6d3d1" stroke-width="8" stroke-linecap="round"/>' +
-      '<path d="M293 294c-21-23-10-50 18-59 27-9 62 1 75 25 13 24-9 55-41 62-22 5-42-5-52-28z" fill="#f1f5f9"/>' +
-      '<circle cx="350" cy="272" r="21" fill="#facc15"/>' +
-      '<path d="M486 306c24-76 83-96 139-57 33 23 40 62 20 91-24 34-73 45-119 24z" fill="#7c2d12"/>' +
-      '<path d="M493 294c33-12 77-4 129 20M501 319c35-11 72-5 111 16M524 346c29-8 57-4 84 10" fill="none" stroke="#f59e0b" stroke-width="9" stroke-linecap="round"/>' +
-      '<path d="M580 242c19-20 38-18 55 4M602 258c19-18 37-16 52 5M621 277c17-14 32-12 45 5" fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round"/>' +
-      '<path d="M220 345c36-18 66-16 93 4M210 369c33-15 64-12 91 6" fill="none" stroke="#84cc16" stroke-width="13" stroke-linecap="round"/>';
+      '<g transform="translate(0 8)">' +
+        '<ellipse cx="400" cy="356" rx="220" ry="42" fill="#e7e5e4"/>' +
+        '<path d="M218 284c13 99 70 139 182 139s169-40 182-139z" fill="#fffaf3"/>' +
+        '<ellipse cx="400" cy="284" rx="182" ry="56" fill="#fff7ed"/>' +
+        '<path d="M286 287c19-42 46-60 73-73M337 306c16-57 40-86 62-104M397 310c6-60 24-91 42-112M456 308c0-50 17-79 37-103" stroke="#d6d3d1" stroke-width="10" stroke-linecap="round"/>' +
+        '<path d="M478 293c27-60 89-71 132-34 34 29 30 82-7 109-44 31-104 17-125-18z" fill="#7c2d12"/>' +
+        '<path d="M496 291c38-15 72-6 106 14M491 319c38-13 73-5 108 16M507 347c28-8 58-3 82 10" fill="none" stroke="#f59e0b" stroke-width="10" stroke-linecap="round"/>' +
+        '<circle cx="316" cy="257" r="25" fill="#facc15"/>' +
+        '<path d="M244 320c35-20 65-18 91 3M235 348c33-16 63-14 90 5" fill="none" stroke="#84cc16" stroke-width="14" stroke-linecap="round"/>' +
+      '</g>';
   } else if (category.includes("lẩu")) {
     foodArt =
-      '<ellipse cx="400" cy="360" rx="248" ry="52" fill="#fff" opacity=".95"/>' +
-      '<path d="M210 270h380v75c0 64-82 92-190 92s-190-28-190-92z" fill="#991b1b"/>' +
-      '<ellipse cx="400" cy="270" rx="190" ry="55" fill="#ef4444"/>' +
-      '<path d="M285 263c44-30 83 17 119-13 40-34 74 22 113-6 31-23 54 5 69 19" fill="none" stroke="#fef3c7" stroke-width="18" stroke-linecap="round"/>' +
-      '<path d="M310 190c-25-48 20-63-5-104M400 186c-18-54 27-70 1-113M489 191c-4-51 44-65 18-106" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity=".8"/>';
-  } else if (category.includes("món nước")) {
+      '<g transform="translate(0 8)">' +
+        '<path d="M213 282h374v61c0 70-80 107-187 107s-187-37-187-107z" fill="#991b1b"/>' +
+        '<ellipse cx="400" cy="282" rx="187" ry="58" fill="#ef4444"/>' +
+        '<path d="M288 276c36-35 69 18 106-17 38-35 72 24 111-8 31-26 57 6 76 20" fill="none" stroke="#fef3c7" stroke-width="17" stroke-linecap="round"/>' +
+        '<path d="M310 216c-24-45 18-62-7-104M400 211c-18-50 26-68 2-112M490 218c-4-47 39-63 17-105" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity=".82"/>' +
+        '<circle cx="284" cy="278" r="13" fill="#facc15"/><circle cx="532" cy="266" r="12" fill="#22c55e"/>' +
+      '</g>';
+  } else if (category.includes("quán nước") || category.includes("cà phê") || food.includes("trà") || food.includes("cà phê")) {
     foodArt =
-      '<ellipse cx="400" cy="360" rx="250" ry="54" fill="#fff" opacity=".95"/>' +
-      '<path d="M220 270c14 120 71 151 180 151s166-31 180-151z" fill="#f8fafc"/>' +
-      '<ellipse cx="400" cy="270" rx="180" ry="52" fill="#fbbf24"/>' +
-      '<path d="M278 274c47-41 71 37 116-7 44-43 67 37 113-8 29-29 48 1 66 15" fill="none" stroke="#fef3c7" stroke-width="16" stroke-linecap="round"/>' +
-      '<path d="M302 217l-52-98M362 212l-20-107M458 212l25-107M520 222l58-99" stroke="#fef3c7" stroke-width="12" stroke-linecap="round"/>';
-  } else if (category.includes("quán nước")) {
+      '<g transform="translate(0 4)">' +
+        '<path d="M282 205h236l-18 177c-4 35-35 54-100 54s-96-19-100-54z" fill="#f8fafc"/>' +
+        '<path d="M297 259h206l-9 119c-2 27-25 39-94 39s-92-12-94-39z" fill="#38bdf8"/>' +
+        '<path d="M518 244h34c40 0 57 28 48 60-8 28-30 41-70 37" fill="none" stroke="#f8fafc" stroke-width="18"/>' +
+        '<path d="M336 203l-31-82M430 203l-4-94M503 205l42-83" stroke="#fef3c7" stroke-width="12" stroke-linecap="round"/>' +
+        '<circle cx="397" cy="313" r="29" fill="#fff" opacity=".66"/>' +
+        '<circle cx="350" cy="355" r="8" fill="#075985"/><circle cx="397" cy="369" r="8" fill="#075985"/><circle cx="444" cy="355" r="8" fill="#075985"/>' +
+      '</g>';
+  } else if (category.includes("ăn vặt")) {
     foodArt =
-      '<ellipse cx="400" cy="390" rx="180" ry="35" fill="#fff" opacity=".9"/>' +
-      '<path d="M294 170h212l-19 208c-3 30-26 48-87 48s-84-18-87-48z" fill="#e0f2fe"/>' +
-      '<path d="M307 235h186l-7 143c-2 26-22 36-86 36s-84-10-86-36z" fill="#38bdf8"/>' +
-      '<path d="M335 170l-28-75M430 170l38-81" stroke="#fff" stroke-width="14" stroke-linecap="round"/>' +
-      '<circle cx="400" cy="285" r="27" fill="#fff" opacity=".65"/>';
+      '<g transform="translate(0 6)">' +
+        '<ellipse cx="400" cy="356" rx="210" ry="42" fill="#e7e5e4"/>' +
+        '<path d="M252 336l116-125M348 350l117-148M443 346l103-116" stroke="#92400e" stroke-width="14" stroke-linecap="round"/>' +
+        '<path d="M227 332c33-32 58-26 79 9 18 29 42 31 70 4 28-27 52-26 75 6 20 28 44 28 72 0 27-28 53-29 83-1" fill="none" stroke="#fb7185" stroke-width="38" stroke-linecap="round"/>' +
+        '<circle cx="278" cy="284" r="18" fill="#facc15"/><circle cx="384" cy="260" r="18" fill="#22c55e"/><circle cx="491" cy="277" r="18" fill="#f97316"/>' +
+      '</g>';
   } else {
     foodArt =
-      '<ellipse cx="400" cy="350" rx="230" ry="52" fill="#fff" opacity=".95"/>' +
-      '<path d="M220 300c20 110 79 145 180 145s160-35 180-145z" fill="#fff"/>' +
-      '<ellipse cx="400" cy="300" rx="180" ry="48" fill="#fde68a"/>' +
-      '<path d="M285 296c35-58 67 15 110-27 39-38 67 32 109-12 26-26 48 4 64 19" fill="none" stroke="#f97316" stroke-width="22" stroke-linecap="round"/>';
+      '<g transform="translate(0 8)">' +
+        '<ellipse cx="400" cy="356" rx="220" ry="42" fill="#e7e5e4"/>' +
+        '<path d="M220 285c13 101 72 141 180 141s167-40 180-141z" fill="#fffaf3"/>' +
+        '<ellipse cx="400" cy="285" rx="180" ry="54" fill="#fde68a"/>' +
+        '<path d="M291 287c34-52 68 20 111-24 41-42 71 35 112-12 27-30 51 4 66 21" fill="none" stroke="#f97316" stroke-width="22" stroke-linecap="round"/>' +
+        '<path d="M285 214l-37-91M356 207l-14-99M452 208l22-102M523 219l55-97" stroke="#fef3c7" stroke-width="12" stroke-linecap="round"/>' +
+      '</g>';
   }
 
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">' +
       '<defs>' +
-        '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">' +
+        '<linearGradient id="foodBg" x1="0" y1="0" x2="1" y2="1">' +
           '<stop offset="0%" stop-color="' + profile.from + '"/>' +
           '<stop offset="100%" stop-color="' + profile.to + '"/>' +
         '</linearGradient>' +
-        '<filter id="shadow"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-opacity=".22"/></filter>' +
+        '<filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">' +
+          '<feDropShadow dx="0" dy="15" stdDeviation="13" flood-color="#1f2937" flood-opacity=".22"/>' +
+        '</filter>' +
       '</defs>' +
-      '<rect width="800" height="500" fill="url(#bg)"/>' +
-      '<circle cx="690" cy="70" r="150" fill="#ffffff" opacity=".13"/>' +
-      '<circle cx="90" cy="440" r="180" fill="#ffffff" opacity=".1"/>' +
-      '<g filter="url(#shadow)">' + foodArt + '</g>' +
-      '<text x="400" y="92" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="34" font-weight="700" letter-spacing="4">' +
+      '<rect width="800" height="500" rx="34" fill="url(#foodBg)"/>' +
+      '<circle cx="690" cy="75" r="150" fill="#fff" opacity=".14"/>' +
+      '<circle cx="80" cy="450" r="190" fill="#fff" opacity=".1"/>' +
+      '<path d="M60 120c90-55 161-54 220 0M528 424c83-49 145-46 213 0" fill="none" stroke="#fff" stroke-width="3" opacity=".18"/>' +
+      '<g filter="url(#softShadow)">' + foodArt + '</g>' +
+      '<text x="400" y="82" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="26" font-weight="700" letter-spacing="3">' +
         escapeSvgText(profile.label) +
       '</text>' +
-      '<text x="400" y="455" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" opacity=".86">' +
-        'ẢNH MINH HOẠ • ĂN SẬP SÀI GÒN' +
+      '<text x="400" y="462" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.4" opacity=".82">' +
+        'MINH HOẠ MÓN ĂN' +
       '</text>' +
     '</svg>';
 
