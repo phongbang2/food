@@ -332,7 +332,7 @@ function getFilteredRows() {
   );
 }
 
-function updateResultSummary(count, total = state.allData.length, isPreview = false) {
+function updateResultSummary(count, total = state.allData.length, isPreview = false, isDefaultView = false) {
   const countElement = $("resultCount");
   const titleElement = $("resultsTitle");
   const showAllButton = $("showAllButton");
@@ -353,7 +353,7 @@ function updateResultSummary(count, total = state.allData.length, isPreview = fa
   }
 
   if (showAllButton) {
-    showAllButton.hidden = !isPreview || total <= count;
+    showAllButton.hidden = !isDefaultView || total <= 6;
     showAllButton.textContent = state.showAll ? "Thu gọn" : "Xem tất cả";
   }
 }
@@ -907,10 +907,11 @@ function render() {
 
   const hasFilter = Object.values(state.filters).some(Boolean);
   const rows = getFilteredRows();
-  const isPreview = !hasFilter && !state.location && !state.showAll;
+  const isDefaultView = !hasFilter && !state.location;
+  const isPreview = isDefaultView && !state.showAll;
   const visibleRows = isPreview ? rows.slice(0, 6) : rows;
 
-  updateResultSummary(visibleRows.length, rows.length, isPreview);
+  updateResultSummary(visibleRows.length, rows.length, isPreview, isDefaultView);
   refreshQuickChipState();
 
   if (!rows.length) {
