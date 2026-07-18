@@ -642,8 +642,8 @@ class CollectorApp(tk.Tk):
             trend_items.clear()
             trend_tree.delete(*trend_tree.get_children())
             trend_status.set("Không lấy được review")
-            self._log(f"Lỗi RSS xu hướng: {error}")
-            messagebox.showerror("Không thể tìm tín hiệu", error[:2000])
+            self._log(f"Lỗi RSS review: {error}")
+            messagebox.showerror("Không thể tìm review", error[:2000])
 
         def safe_after(callback, *args) -> None:
             try:
