@@ -16,7 +16,8 @@ const state = {
   deferredPrompt: null,
   location: null,
   locating: false,
-  geocodeRun: 0
+  geocodeRun: 0,
+  showAll: false
 };
 
 const distanceByRow = new WeakMap();
@@ -331,21 +332,29 @@ function getFilteredRows() {
   );
 }
 
-function updateResultSummary(count, total = state.allData.length) {
+function updateResultSummary(count, total = state.allData.length, isPreview = false) {
   const countElement = $("resultCount");
   const titleElement = $("resultsTitle");
+  const showAllButton = $("showAllButton");
   const hasFilter = Object.values(state.filters).some(Boolean);
 
   if (countElement) {
-    countElement.textContent = hasFilter || state.location
-      ? count + "/" + total + " quán"
-      : total + " quán trong danh sách";
+    countElement.textContent = isPreview
+      ? count + " quán gợi ý • " + total + " trong danh sách"
+      : hasFilter || state.location
+        ? count + "/" + total + " quán"
+        : total + " quán trong danh sách";
   }
 
   if (titleElement) {
     titleElement.textContent = state.location
       ? "Quán gần bạn"
       : "Quán ngon gần đây";
+  }
+
+  if (showAllButton) {
+    showAllButton.hidden = !isPreview || total <= count;
+    showAllButton.textContent = state.showAll ? "Thu gọn" : "Xem tất cả";
   }
 }
 
@@ -778,6 +787,46 @@ async function geocodeRowsInBackground(rows, runId) {
   }
 }
 
+function getBusinessStatus(row) {
+  const raw = getField(row, [
+    "Trạng thái",
+    "Trang thai",
+    "Status",
+    "Business status",
+    "Tình trạng"
+  ]);
+  const key = valueKey(raw);
+
+  if (!raw) return null;
+  if (/(đang mở|mở cửa|open|operational|hoạt động)/.test(key)) {
+    return { label: "Đang mở", className: "open" };
+  }
+  if (/(đóng|closed|tạm nghỉ|temporarily)/.test(key)) {
+    return { label: "Tạm đóng", className: "closed" };
+  }
+  return { label: raw, className: "unknown" };
+}
+
+function getRowSource(row) {
+  return getField(row, [
+    "Nguồn dữ liệu",
+    "Nguon du lieu",
+    "Nguồn",
+    "Source"
+  ]) || "Dữ liệu đã duyệt";
+}
+
+function getRowUpdatedAt(row) {
+  return getField(row, [
+    "Cập nhật",
+    "Cap nhat",
+    "Ngày cập nhật",
+    "Ngay cap nhat",
+    "Updated at",
+    "Last updated"
+  ]);
+}
+
 function renderCard(row) {
   const restaurant = getField(row, ["Tên quán", "Ten quan", "Quán"]) || "Quán ngon ẩn danh";
   const food = getField(row, ["Tên món", "Ten mon", "Món ăn"]);
@@ -787,13 +836,14 @@ function renderCard(row) {
     "Loại món",
     "Loai mon"
   ]);
-  const address = getField(row, [
-    "Địa chỉ", "Dia chi", "Tên đường", "Ten duong", "Đường"
-  ]);
+  const address = getRowAddress(row);
   const district = getField(row, ["Quận", "Quan"]);
   const hours = getField(row, ["Giờ mở cửa", "Gio mo cua"]);
   const price = getField(row, ["Khoảng giá", "Khoang gia", "Giá"]);
   const note = getField(row, ["Note", "Ghi chú", "Ghi chu"]);
+  const businessStatus = getBusinessStatus(row);
+  const source = getRowSource(row);
+  const updatedAt = getRowUpdatedAt(row);
   const actualImage = getRowImage(row);
   const image = actualImage || getIllustratedImageUrl(row);
   const isIllustration = !actualImage;
@@ -811,6 +861,11 @@ function renderCard(row) {
     price ? "<div><dt>Khoảng giá</dt><dd>" + escapeHtml(price) + "</dd></div>" : ""
   ].join("");
 
+  const trust = '<div class="card-trust">' +
+    '<span>✓ ' + escapeHtml(source) + "</span>" +
+    (updatedAt ? "<span>↻ " + escapeHtml(updatedAt) + "</span>" : "") +
+  "</div>";
+
   return (
     '<article class="result-item">' +
       '<div class="food-visual">' + imageHtml +
@@ -824,6 +879,15 @@ function renderCard(row) {
       "</div>" +
       '<div class="result-content">' +
         "<h3>" + escapeHtml(restaurant) + "</h3>" +
+        (businessStatus
+          ? '<span class="business-status ' + escapeHtml(businessStatus.className) + '">' +
+            escapeHtml(businessStatus.label) + "</span>"
+          : "") +
+        (address
+          ? '<p class="address-line">⌖ ' + escapeHtml(address) + "</p>"
+          : (district
+            ? '<p class="address-line">⌖ ' + escapeHtml(district) + "</p>"
+            : "")) +
         (details ? '<dl class="meta-list">' + details + "</dl>" : "") +
         (mapUrl
           ? '<a class="map-link" href="' + escapeHtml(mapUrl) +
@@ -831,6 +895,7 @@ function renderCard(row) {
             escapeHtml(mapLinkLabel) + "</a>"
           : "") +
         (note ? '<p class="card-note">' + escapeHtml(note) + "</p>" : "") +
+        trust +
       "</div>" +
     "</article>"
   );
@@ -841,28 +906,14 @@ function render() {
   if (!state.loaded) return;
 
   const hasFilter = Object.values(state.filters).some(Boolean);
-  if (!hasFilter && !state.location) {
-    updateResultSummary(state.allData.length, state.allData.length);
-    result.innerHTML =
-      '<div class="empty-state">' +
-        '<div class="empty-icon" aria-hidden="true">⌖</div>' +
-        "<h3>Bắt đầu khám phá</h3>" +
-        "<p>Chọn quận, món ăn hoặc phân loại để tìm quán phù hợp.</p>" +
-      "</div>";
-    return;
-  }
-
   const rows = getFilteredRows();
-  updateResultSummary(rows.length, state.allData.length);
-  if (state.location) {
-    rows.sort((a, b) =>
-      (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
-      (distanceByRow.get(b) ?? Number.POSITIVE_INFINITY)
-    );
-  }
+  const isPreview = !hasFilter && !state.location && !state.showAll;
+  const visibleRows = isPreview ? rows.slice(0, 6) : rows;
+
+  updateResultSummary(visibleRows.length, rows.length, isPreview);
+  refreshQuickChipState();
 
   if (!rows.length) {
-    updateResultSummary(0, state.allData.length);
     result.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon" aria-hidden="true">⌕</div>' +
@@ -872,7 +923,14 @@ function render() {
     return;
   }
 
-  result.innerHTML = rows.map(renderCard).join("");
+  if (state.location) {
+    visibleRows.sort((a, b) =>
+      (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
+      (distanceByRow.get(b) ?? Number.POSITIVE_INFINITY)
+    );
+  }
+
+  result.innerHTML = visibleRows.map(renderCard).join("");
 }
 
 function clearFilters() {
@@ -881,6 +939,7 @@ function clearFilters() {
     food: "",
     type: ""
   };
+  state.showAll = false;
   updateFilterOptions();
   render();
 
@@ -889,6 +948,58 @@ function clearFilters() {
   } else {
     setStatus("Đã xoá bộ lọc. Chọn quận hoặc món để bắt đầu.", "success");
   }
+}
+
+function findQuickValue(filterName, query) {
+  const needle = valueKey(query);
+  return getOptionsFor(filterName).find(value =>
+    valueKey(value).includes(needle)
+  ) || "";
+}
+
+function refreshQuickChipState() {
+  document.querySelectorAll(".quick-chip").forEach(button => {
+    const isNearby = button.dataset.quick === "nearby" && Boolean(state.location);
+    const isReset = button.dataset.quickReset === "true" &&
+      !Object.values(state.filters).some(Boolean) &&
+      !state.location;
+    const isFood = button.dataset.quickFood &&
+      valueKey(state.filters.food).includes(valueKey(button.dataset.quickFood));
+    const isType = button.dataset.quickType &&
+      valueKey(state.filters.type).includes(valueKey(button.dataset.quickType));
+    button.classList.toggle("is-active", Boolean(isNearby || isReset || isFood || isType));
+  });
+}
+
+function handleQuickFilter(button) {
+  if (button.dataset.quick === "nearby") {
+    requestLocation();
+    return;
+  }
+
+  if (button.dataset.quickReset === "true") {
+    clearFilters();
+    return;
+  }
+
+  const filterName = button.dataset.quickFood ? "food" : "type";
+  const query = button.dataset.quickFood || button.dataset.quickType;
+  const value = findQuickValue(filterName, query);
+
+  if (!value) {
+    setStatus("Chưa có dữ liệu " + query + " trong danh sách hiện tại.", "info");
+    return;
+  }
+
+  state.filters[filterName] = value;
+  state.showAll = false;
+  updateFilterOptions();
+  render();
+
+  if (state.location) {
+    updateDistances();
+  }
+  setStatus("Đang gợi ý theo " + value + ".", "success");
 }
 
 function handleFilterChange(event) {
@@ -900,6 +1011,7 @@ function handleFilterChange(event) {
 
   if (!filterName) return;
   state.filters[filterName] = normalise(event.target.value);
+  state.showAll = false;
   updateFilterOptions();
   render();
 
@@ -1032,6 +1144,13 @@ function init() {
   $("typeSelect")?.addEventListener("change", handleFilterChange);
   $("locationButton")?.addEventListener("click", requestLocation);
   $("clearFilters")?.addEventListener("click", clearFilters);
+  $("showAllButton")?.addEventListener("click", () => {
+    state.showAll = !state.showAll;
+    render();
+  });
+  document.querySelectorAll(".quick-chip").forEach(button => {
+    button.addEventListener("click", () => handleQuickFilter(button));
+  });
   setupInstallExperience();
   registerServiceWorker();
   loadData();
