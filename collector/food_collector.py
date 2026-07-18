@@ -61,6 +61,26 @@ def normalize(value: object) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", text)).strip()
 
 
+def build_google_maps_url(
+    name: str,
+    street: str = "",
+    district: str = "",
+    latitude: float | None = None,
+    longitude: float | None = None,
+) -> str:
+    parts = [
+        str(name or "").strip(),
+        str(street or "").strip() if str(street or "").strip() not in {"Chưa rõ địa chỉ", "—"} else "",
+        str(district or "").strip(),
+        "Hồ Chí Minh",
+        "Việt Nam",
+    ]
+    query = ", ".join(part for part in parts if part)
+    if not query and latitude is not None and longitude is not None:
+        query = f"{latitude},{longitude}"
+    return "https://www.google.com/maps/search/?" + urlencode({"api": "1", "query": query})
+
+
 def load_env(path: Path) -> None:
     if not path.exists():
         return
@@ -204,9 +224,11 @@ def fetch_arcgis_places(
         coordinates = web_mercator_to_wgs84(feature.get("geometry"))
         street = read(("address", "dia chi", "street", "duong", "location")) or "Chưa rõ địa chỉ"
         map_url = ""
+        coordinate_url = ""
         if coordinates:
             latitude, longitude = coordinates
-            map_url = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+            map_url = build_google_maps_url(name, street, item_district, latitude, longitude)
+            coordinate_url = build_google_maps_url("", "", "", latitude, longitude)
         object_id = read(("objectid", "fid", "id"))
         source = (
             "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/"
@@ -228,6 +250,7 @@ def fetch_arcgis_places(
             "note": "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa.",
             "source": source,
             "mapUrl": map_url,
+            "coordinateUrl": coordinate_url,
             "reason": "Đề xuất từ ArcGIS công khai; cần kiểm tra thực tế trước khi duyệt.",
             "duplicate": False,
         }
@@ -392,10 +415,8 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
     object_path = f"{element.get('type', 'node')}/{element.get('id')}"
     latitude, longitude = position
     source = f"https://www.openstreetmap.org/{object_path}"
-    map_url = (
-        "https://www.google.com/maps/search/?api=1&query="
-        f"{latitude},{longitude}"
-    )
+    map_url = build_google_maps_url(name, street, district, latitude, longitude)
+    coordinate_url = build_google_maps_url("", "", "", latitude, longitude)
     cuisine = str(tags.get("cuisine") or "").strip()
     note_parts = [
         f"Tọa độ: {latitude}, {longitude}",
@@ -414,6 +435,7 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
         "note": " • ".join(part for part in note_parts if part),
         "source": source,
         "mapUrl": map_url,
+        "coordinateUrl": coordinate_url,
         "reason": "Đề xuất từ OpenStreetMap; cần kiểm tra thực tế trước khi duyệt.",
         "duplicate": False,
     }
