@@ -420,6 +420,15 @@ function mapArcgisFeature_(feature, requestedDistrict) {
     note: "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa.",
     source: source,
     mapUrl: coordinates
+      ? buildGoogleMapsUrl_(
+        name,
+        street,
+        district,
+        coordinates.latitude,
+        coordinates.longitude
+      )
+      : "",
+    coordinateUrl: coordinates
       ? "https://www.google.com/maps/search/?api=1&query=" +
         encodeURIComponent(coordinates.latitude + "," + coordinates.longitude)
       : "",
@@ -544,6 +553,23 @@ function getOsmBbox_(district) {
   return bboxes[key] || "10.33,106.35,11.15,107.05";
 }
 
+function buildGoogleMapsUrl_(name, street, district, latitude, longitude) {
+  const cleanStreet = String(street || "").trim();
+  const parts = [
+    String(name || "").trim(),
+    cleanStreet === "Chưa rõ địa chỉ" ? "" : cleanStreet,
+    String(district || "").trim(),
+    "Hồ Chí Minh",
+    "Việt Nam"
+  ].filter(Boolean);
+  const query = parts.join(", ") ||
+    (latitude !== undefined && longitude !== undefined
+      ? String(latitude) + "," + String(longitude)
+      : "");
+  return "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(query);
+}
+
 function mapOsmElement_(element, requestedDistrict) {
   const tags = element.tags || {};
   const name = String(tags["name:vi"] || tags.name || "").trim();
@@ -572,7 +598,14 @@ function mapOsmElement_(element, requestedDistrict) {
   const food = mapOsmCuisine_(tags);
   const objectPath = String(element.type || "node") + "/" + element.id;
   const source = "https://www.openstreetmap.org/" + objectPath;
-  const mapUrl = "https://www.google.com/maps/search/?api=1&query=" +
+  const mapUrl = buildGoogleMapsUrl_(
+    name,
+    street,
+    district,
+    position.latitude,
+    position.longitude
+  );
+  const coordinateUrl = "https://www.google.com/maps/search/?api=1&query=" +
     encodeURIComponent(position.latitude + "," + position.longitude);
 
   return {
@@ -590,6 +623,7 @@ function mapOsmElement_(element, requestedDistrict) {
     ].filter(Boolean).join(" • "),
     source: source,
     mapUrl: mapUrl,
+    coordinateUrl: coordinateUrl,
     duplicate: false
   };
 }
