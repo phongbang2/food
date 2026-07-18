@@ -394,7 +394,8 @@ function mapArcgisFeature_(feature, requestedDistrict) {
   if (!name) return null;
 
   const street = read(["address", "dia chi", "street", "duong", "location"]);
-  const district = read(["district", "quan", "huyen", "suburb"]) || requestedDistrict;
+  const district = read(["district", "quan", "huyen", "suburb"]);
+  const hasCompleteAddress = Boolean(street && district);
   const rawCategory = read(["category", "loai", "type", "cuisine", "food"]);
   const sourceCategory = mapArcgisCategory_(rawCategory, name);
   const food = rawCategory || "Món ăn đang cập nhật";
@@ -417,7 +418,9 @@ function mapArcgisFeature_(feature, requestedDistrict) {
     street: street,
     district: district,
     hours: read(["opening hours", "gio mo cua", "hours"]),
-    note: "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa.",
+    note: hasCompleteAddress
+      ? "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa."
+      : "Nguồn ArcGIS Food_in_HCM; thiếu địa chỉ đầy đủ, cần xác minh.",
     source: source,
     mapUrl: coordinates
       ? buildGoogleMapsUrl_(
@@ -432,6 +435,8 @@ function mapArcgisFeature_(feature, requestedDistrict) {
       ? "https://www.google.com/maps/search/?api=1&query=" +
         encodeURIComponent(coordinates.latitude + "," + coordinates.longitude)
       : "",
+    addressStatus: hasCompleteAddress ? "Đủ địa chỉ" : "Thiếu địa chỉ",
+    needsVerification: !hasCompleteAddress,
     duplicate: false
   };
 }
@@ -474,7 +479,9 @@ function saveOsmCandidates(candidates) {
     throw new Error("Chưa chọn quán nào.");
   }
 
-  const selected = candidates.slice(0, 30).filter(candidate => !candidate.duplicate);
+  const selected = candidates.slice(0, 30).filter(candidate =>
+    !candidate.duplicate && !candidate.needsVerification
+  );
   if (!selected.length) {
     return { added: 0, skipped: candidates.length, message: "Các quán đã chọn đều trùng dữ liệu hiện có." };
   }
@@ -582,17 +589,16 @@ function mapOsmElement_(element, requestedDistrict) {
       : null;
   if (!position) return null;
 
-  const street = [
-    tags["addr:housenumber"] || "",
-    tags["addr:street"] || ""
-  ].join(" ").trim();
+  const houseNumber = String(tags["addr:housenumber"] || "").trim();
+  const streetName = String(tags["addr:street"] || "").trim();
+  const street = [houseNumber, streetName].filter(Boolean).join(" ").trim();
   const district = String(
     tags["addr:district"] ||
     tags["addr:city_district"] ||
     tags["addr:suburb"] ||
-    requestedDistrict ||
     ""
   ).trim();
+  const hasCompleteAddress = Boolean(houseNumber && streetName && district);
 
   const type = mapOsmCategory_(tags);
   const food = mapOsmCuisine_(tags);
@@ -619,11 +625,15 @@ function mapOsmElement_(element, requestedDistrict) {
     note: [
       tags.cuisine ? "Cuisine OSM: " + tags.cuisine : "",
       "Tọa độ: " + position.latitude + ", " + position.longitude,
-      "Cần xác minh tên, địa chỉ và giờ mở cửa."
+      hasCompleteAddress
+        ? "Địa chỉ OSM đầy đủ."
+        : "Thiếu số nhà, tên đường hoặc quận; cần xác minh."
     ].filter(Boolean).join(" • "),
     source: source,
     mapUrl: mapUrl,
     coordinateUrl: coordinateUrl,
+    addressStatus: hasCompleteAddress ? "Đủ địa chỉ" : "Thiếu địa chỉ",
+    needsVerification: !hasCompleteAddress,
     duplicate: false
   };
 }
