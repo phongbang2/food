@@ -84,6 +84,15 @@
         <span class="filter-hint">Lọc theo quận, món và phân loại để tìm nhanh hơn.</span>
         <button class="clear-button" id="clearFilters" type="button">Xoá bộ lọc</button>
       </div>
+
+      <div class="quick-filters" aria-label="Gợi ý lọc nhanh">
+        <span class="quick-label">Gợi ý nhanh</span>
+        <button class="quick-chip" type="button" data-quick="nearby">⌖ Gần tôi</button>
+        <button class="quick-chip" type="button" data-quick-food="cơm tấm">Cơm tấm</button>
+        <button class="quick-chip" type="button" data-quick-food="bánh mì">Bánh mì</button>
+        <button class="quick-chip" type="button" data-quick-type="cà phê">Cà phê</button>
+        <button class="quick-chip" type="button" data-quick-reset="true">Tất cả quán</button>
+      </div>
     </section>
 
     <section class="results-section" aria-labelledby="resultsTitle">
@@ -94,6 +103,7 @@
         </div>
         <div class="results-summary">
           <span class="result-count" id="resultCount">Đang tải…</span>
+          <button class="clear-button show-all-button" id="showAllButton" type="button" hidden>Xem tất cả</button>
         </div>
       </div>
 
