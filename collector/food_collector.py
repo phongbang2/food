@@ -254,9 +254,13 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
         or ""
     ).strip()
     if allowed_districts:
-        district = canonical_choice(district, allowed_districts, requested_district)
-        if not district:
+        district_match = next(
+            (item for item in allowed_districts if normalize(item) == normalize(district)),
+            "",
+        )
+        if not district_match:
             return None
+        district = district_match
 
     item_type = canonical_choice(map_type(tags), allowed_types, "Món khô")
     object_path = f"{element.get('type', 'node')}/{element.get('id')}"
