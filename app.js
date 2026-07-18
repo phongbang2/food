@@ -331,6 +331,24 @@ function getFilteredRows() {
   );
 }
 
+function updateResultSummary(count, total = state.allData.length) {
+  const countElement = $("resultCount");
+  const titleElement = $("resultsTitle");
+  const hasFilter = Object.values(state.filters).some(Boolean);
+
+  if (countElement) {
+    countElement.textContent = hasFilter || state.location
+      ? count + "/" + total + " quán"
+      : total + " quán trong danh sách";
+  }
+
+  if (titleElement) {
+    titleElement.textContent = state.location
+      ? "Quán gần bạn"
+      : "Quán ngon gần đây";
+  }
+}
+
 function safeExternalUrl(value) {
   try {
     const url = new URL(value);
@@ -824,6 +842,7 @@ function render() {
 
   const hasFilter = Object.values(state.filters).some(Boolean);
   if (!hasFilter && !state.location) {
+    updateResultSummary(state.allData.length, state.allData.length);
     result.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon" aria-hidden="true">⌖</div>' +
@@ -834,6 +853,7 @@ function render() {
   }
 
   const rows = getFilteredRows();
+  updateResultSummary(rows.length, state.allData.length);
   if (state.location) {
     rows.sort((a, b) =>
       (distanceByRow.get(a) ?? Number.POSITIVE_INFINITY) -
@@ -842,6 +862,7 @@ function render() {
   }
 
   if (!rows.length) {
+    updateResultSummary(0, state.allData.length);
     result.innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon" aria-hidden="true">⌕</div>' +
@@ -852,6 +873,22 @@ function render() {
   }
 
   result.innerHTML = rows.map(renderCard).join("");
+}
+
+function clearFilters() {
+  state.filters = {
+    district: "",
+    food: "",
+    type: ""
+  };
+  updateFilterOptions();
+  render();
+
+  if (state.location) {
+    updateDistances();
+  } else {
+    setStatus("Đã xoá bộ lọc. Chọn quận hoặc món để bắt đầu.", "success");
+  }
 }
 
 function handleFilterChange(event) {
@@ -994,6 +1031,7 @@ function init() {
   $("foodSelect")?.addEventListener("change", handleFilterChange);
   $("typeSelect")?.addEventListener("change", handleFilterChange);
   $("locationButton")?.addEventListener("click", requestLocation);
+  $("clearFilters")?.addEventListener("click", clearFilters);
   setupInstallExperience();
   registerServiceWorker();
   loadData();
