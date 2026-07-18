@@ -211,18 +211,15 @@ def fetch_arcgis_places(
             continue
         raw_category = read(("category", "loai", "type", "cuisine", "food"))
         item_type = canonical_choice(map_arcgis_category(raw_category, name), allowed_types, "Món khô")
-        item_district = read(("district", "quan", "huyen", "suburb")) or district
-        if allowed_districts:
-            district_match = next(
-                (item for item in allowed_districts if normalize(item) == normalize(item_district)),
-                "",
-            )
-            if not district_match:
-                continue
-            item_district = district_match
+        raw_district = read(("district", "quan", "huyen", "suburb"))
+        item_district = canonical_district(raw_district, allowed_districts) if allowed_districts else raw_district
+        if allowed_districts and not item_district:
+            continue
 
         coordinates = web_mercator_to_wgs84(feature.get("geometry"))
-        street = read(("address", "dia chi", "street", "duong", "location")) or "Chưa rõ địa chỉ"
+        street = read(("address", "dia chi", "street", "duong", "location"))
+        has_complete_address = bool(street and item_district)
+        street = street or "Chưa rõ địa chỉ"
         map_url = ""
         coordinate_url = ""
         if coordinates:
@@ -252,6 +249,8 @@ def fetch_arcgis_places(
             "mapUrl": map_url,
             "coordinateUrl": coordinate_url,
             "reason": "Đề xuất từ ArcGIS công khai; cần kiểm tra thực tế trước khi duyệt.",
+            "addressStatus": "Đủ địa chỉ" if has_complete_address else "Thiếu địa chỉ",
+            "needsVerification": not has_complete_address,
             "duplicate": False,
         }
         if category != "all":
@@ -335,6 +334,24 @@ def canonical_choice(value: str, allowed: list[str], fallback: str = "") -> str:
     return allowed[0]
 
 
+def canonical_district(value: str, allowed: list[str]) -> str:
+    wanted = normalize(value)
+    if not wanted:
+        return ""
+    for item in allowed:
+        if normalize(item) == wanted:
+            return item
+    wanted_key = re.sub(r"^(quan|district|huyen|q)\\s*", "", wanted)
+    wanted_key = wanted_key.replace("thanh pho ", "").strip()
+    for item in allowed:
+        item_key = normalize(item)
+        item_key = re.sub(r"^(quan|district|huyen|q)\\s*", "", item_key)
+        item_key = item_key.replace("thanh pho ", "").strip()
+        if item_key == wanted_key:
+            return item
+    return ""
+
+
 def map_type(tags: dict) -> str:
     amenity = normalize(tags.get("amenity"))
     shop = normalize(tags.get("shop"))
@@ -389,28 +406,21 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
     if position[0] is None or position[1] is None:
         return None
 
-    street = " ".join(
-        part for part in (
-            str(tags.get("addr:housenumber") or "").strip(),
-            str(tags.get("addr:street") or "").strip(),
-        ) if part
-    )
-    district = str(
+    house_number = str(tags.get("addr:housenumber") or "").strip()
+    street_name = str(tags.get("addr:street") or "").strip()
+    street = " ".join(part for part in (house_number, street_name) if part)
+
+    raw_district = str(
         tags.get("addr:district")
         or tags.get("addr:city_district")
         or tags.get("addr:suburb")
-        or requested_district
         or ""
     ).strip()
-    if allowed_districts:
-        district_match = next(
-            (item for item in allowed_districts if normalize(item) == normalize(district)),
-            "",
-        )
-        if not district_match:
-            return None
-        district = district_match
+    district = canonical_district(raw_district, allowed_districts) if allowed_districts else raw_district
+    if allowed_districts and not district:
+        return None
 
+    has_complete_address = bool(house_number and street_name and district)
     item_type = canonical_choice(map_type(tags), allowed_types, "Món khô")
     object_path = f"{element.get('type', 'node')}/{element.get('id')}"
     latitude, longitude = position
@@ -421,7 +431,7 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
     note_parts = [
         f"Tọa độ: {latitude}, {longitude}",
         f"Cuisine OSM: {cuisine}" if cuisine else "",
-        "Cần xác minh tên, địa chỉ và giờ mở cửa.",
+        "Địa chỉ OSM đầy đủ." if has_complete_address else "Thiếu số nhà, tên đường hoặc quận; cần xác minh.",
     ]
     return {
         "id": object_path,
@@ -429,7 +439,7 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
         "food": map_food(tags),
         "type": item_type,
         "street": street or "Chưa rõ địa chỉ",
-        "district": district or requested_district,
+        "district": district,
         "hours": str(tags.get("opening_hours") or "").strip(),
         "price": "",
         "note": " • ".join(part for part in note_parts if part),
@@ -437,6 +447,8 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
         "mapUrl": map_url,
         "coordinateUrl": coordinate_url,
         "reason": "Đề xuất từ OpenStreetMap; cần kiểm tra thực tế trước khi duyệt.",
+        "addressStatus": "Đủ địa chỉ" if has_complete_address else "Thiếu địa chỉ",
+        "needsVerification": not has_complete_address,
         "duplicate": False,
     }
 
@@ -474,7 +486,11 @@ def collect(args: argparse.Namespace) -> tuple[list[dict], str]:
         item["duplicate"] = key in existing
         unique.append(item)
 
-    unique.sort(key=lambda item: (item["duplicate"], normalize(item["name"])))
+    unique.sort(key=lambda item: (
+        item["duplicate"],
+        item.get("needsVerification", False),
+        normalize(item["name"]),
+    ))
     return unique[: args.limit], endpoint
 
 
@@ -488,7 +504,10 @@ def write_outputs(candidates: list[dict], output_dir: Path) -> tuple[Path, Path]
         "candidates": candidates,
     }
     json_path.write_text(json.dumps(envelope, ensure_ascii=False, indent=2), encoding="utf-8")
-    fields = ["name", "food", "type", "street", "district", "hours", "price", "note", "source", "mapUrl", "duplicate"]
+    fields = [
+        "name", "food", "type", "street", "district", "hours", "price",
+        "note", "source", "mapUrl", "addressStatus", "needsVerification", "duplicate",
+    ]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
@@ -501,7 +520,10 @@ def push_to_apps_script(candidates: list[dict]) -> dict:
     token = os.environ.get("IMPORT_TOKEN", "").strip()
     if not url or not token:
         raise RuntimeError("Cần đặt APPS_SCRIPT_URL và IMPORT_TOKEN trong collector/.env trước khi dùng --push.")
-    selected = [item for item in candidates if not item.get("duplicate")]
+    selected = [
+        item for item in candidates
+        if not item.get("duplicate") and not item.get("needsVerification")
+    ]
     if not selected:
         return {"added": 0, "skipped": len(candidates), "message": "Không có quán mới để gửi."}
     return http_json(
