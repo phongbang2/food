@@ -847,11 +847,18 @@ function saveImportedCandidates_(candidates) {
 
   try {
     const selected = candidates.slice(0, 50);
+    const knownKeys = getKnownRestaurantKeys_();
     let added = 0;
     let skipped = 0;
 
     selected.forEach(candidate => {
       try {
+        const key = restaurantKey_(candidate);
+        if (!key || knownKeys.has(key)) {
+          skipped += 1;
+          return;
+        }
+
         saveReview({
           action: "ADD",
           name: candidate.name,
@@ -865,6 +872,7 @@ function saveImportedCandidates_(candidates) {
           source: candidate.source,
           reason: candidate.reason || "Đề xuất từ bộ thu thập Python; cần kiểm tra trước khi duyệt."
         });
+        knownKeys.add(key);
         added += 1;
       } catch (error) {
         skipped += 1;
