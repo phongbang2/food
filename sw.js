@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 const SHELL_CACHE = "food-finder-shell-" + CACHE_VERSION;
 const DATA_CACHE = "food-finder-data-" + CACHE_VERSION;
 const PAPA_URL = "https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js";
