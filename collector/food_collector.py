@@ -76,8 +76,12 @@ def http_json(url: str, method: str = "GET", payload: dict | None = None, timeou
     body = None
     headers = {"User-Agent": APP_NAME, "Accept": "application/json"}
     if payload is not None:
-        body = urlencode(payload).encode("utf-8")
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        if isinstance(payload, (bytes, bytearray)):
+            body = bytes(payload)
+            headers["Content-Type"] = "application/json"
+        else:
+            body = urlencode(payload).encode("utf-8")
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
     request = Request(url, data=body, headers=headers, method=method)
     with urlopen(request, timeout=timeout) as response:
         raw = response.read().decode("utf-8", errors="replace")
