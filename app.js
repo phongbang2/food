@@ -4,6 +4,7 @@ const DATA_CACHE_KEY = "food-finder-data-v3";
 const GEOCODE_CACHE_KEY = "food-finder-geocode-v1";
 const REQUEST_TIMEOUT_MS = 12000;
 const MAX_GEOCODES_PER_REQUEST = 3;
+const MAX_VISIBLE_RESULTS = 12;
 
 const state = {
   allData: [],
@@ -332,29 +333,20 @@ function getFilteredRows() {
   );
 }
 
-function updateResultSummary(count, total = state.allData.length, isPreview = false, isDefaultView = false) {
+function updateResultSummary(count, total = state.allData.length, isLimited = false) {
   const countElement = $("resultCount");
   const titleElement = $("resultsTitle");
-  const showAllButton = $("showAllButton");
-  const hasFilter = Object.values(state.filters).some(Boolean);
 
   if (countElement) {
-    countElement.textContent = isPreview
-      ? count + " quán gợi ý • " + total + " trong danh sách"
-      : hasFilter || state.location
-        ? count + "/" + total + " quán"
-        : total + " quán trong danh sách";
+    countElement.textContent = isLimited
+      ? count + "/" + total + " quán • hãy lọc thêm"
+      : count + " quán";
   }
 
   if (titleElement) {
     titleElement.textContent = state.location
       ? "Quán gần bạn"
       : "Quán ngon gần đây";
-  }
-
-  if (showAllButton) {
-    showAllButton.hidden = !isDefaultView || total <= 6;
-    showAllButton.textContent = state.showAll ? "Thu gọn" : "Xem tất cả";
   }
 }
 
@@ -905,13 +897,11 @@ function render() {
   const result = $("result");
   if (!state.loaded) return;
 
-  const hasFilter = Object.values(state.filters).some(Boolean);
   const rows = getFilteredRows();
-  const isDefaultView = !hasFilter && !state.location;
-  const isPreview = isDefaultView && !state.showAll;
-  const visibleRows = isPreview ? rows.slice(0, 6) : rows;
+  const visibleRows = rows.slice(0, MAX_VISIBLE_RESULTS);
+  const isLimited = rows.length > visibleRows.length;
 
-  updateResultSummary(visibleRows.length, rows.length, isPreview, isDefaultView);
+  updateResultSummary(visibleRows.length, rows.length, isLimited);
   refreshQuickChipState();
 
   if (!rows.length) {
