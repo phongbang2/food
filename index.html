@@ -22,6 +22,10 @@
 <body>
   <header class="hero">
     <div class="hero-content">
+      <div class="hero-topbar" aria-label="Thương hiệu">
+        <span class="brand-mark">ASG</span>
+        <span class="hero-badge">Sài Gòn • Food guide</span>
+      </div>
       <span class="eyebrow">CẨM NANG ĂN UỐNG SÀI GÒN</span>
       <h1>Ăn Sập<br />Sài Gòn</h1>
       <p>Chọn quận, chọn món và tìm ngay điểm ăn ngon quanh bạn.</p>
@@ -76,6 +80,10 @@
       </div>
 
       <div class="status-line" id="status" role="status" aria-live="polite"></div>
+      <div class="filter-footer">
+        <span class="filter-hint">Lọc theo quận, món và phân loại để tìm nhanh hơn.</span>
+        <button class="clear-button" id="clearFilters" type="button">Xoá bộ lọc</button>
+      </div>
     </section>
 
     <section class="results-section" aria-labelledby="resultsTitle">
@@ -83,6 +91,9 @@
         <div>
           <span class="section-kicker">GỢI Ý CHO BẠN</span>
           <h2 id="resultsTitle">Quán ngon gần đây</h2>
+        </div>
+        <div class="results-summary">
+          <span class="result-count" id="resultCount">Đang tải…</span>
         </div>
       </div>
 
