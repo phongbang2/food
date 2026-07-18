@@ -810,3 +810,79 @@ function protectText_(value) {
 function getTimezone_() {
   return Session.getScriptTimeZone() || "Asia/Bangkok";
 }
+
+function doPost(e) {
+  try {
+    const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
+    const expectedToken = PropertiesService.getScriptProperties().getProperty("IMPORT_TOKEN");
+
+    if (!expectedToken) {
+      return jsonResponse_({ ok: false, error: "IMPORT_TOKEN chưa được cấu hình trong Apps Script." });
+    }
+    if (!body.token || body.token !== expectedToken) {
+      return jsonResponse_({ ok: false, error: "Token import không hợp lệ." });
+    }
+
+    const candidates = Array.isArray(body.candidates) ? body.candidates : [];
+    if (!candidates.length) {
+      return jsonResponse_({ ok: false, error: "Không có dữ liệu quán để import." });
+    }
+
+    return jsonResponse_({ ok: true, result: saveImportedCandidates_(candidates) });
+  } catch (error) {
+    return jsonResponse_({ ok: false, error: String(error.message || error) });
+  }
+}
+
+function setImportToken() {
+  const token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+  PropertiesService.getScriptProperties().setProperty("IMPORT_TOKEN", token);
+  Logger.log(token);
+  return token;
+}
+
+function saveImportedCandidates_(candidates) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+
+  try {
+    const selected = candidates.slice(0, 50);
+    let added = 0;
+    let skipped = 0;
+
+    selected.forEach(candidate => {
+      try {
+        saveReview({
+          action: "ADD",
+          name: candidate.name,
+          food: candidate.food || "Món ăn đang cập nhật",
+          type: candidate.type,
+          street: candidate.street,
+          district: candidate.district,
+          hours: candidate.hours || "",
+          price: candidate.price || "",
+          note: candidate.note || "",
+          source: candidate.source,
+          reason: candidate.reason || "Đề xuất từ bộ thu thập Python; cần kiểm tra trước khi duyệt."
+        });
+        added += 1;
+      } catch (error) {
+        skipped += 1;
+      }
+    });
+
+    return {
+      added: added,
+      skipped: skipped,
+      message: "Đã đưa " + added + " quán vào hàng chờ Review."
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function jsonResponse_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
