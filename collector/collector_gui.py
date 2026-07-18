@@ -198,6 +198,7 @@ class CollectorApp(tk.Tk):
         yscroll.grid(row=0, column=1, sticky="ns")
         xscroll.grid(row=1, column=0, sticky="ew")
         self.tree.tag_configure("duplicate", foreground="#9aa5b1")
+        self.tree.tag_configure("needs", foreground="#b45309")
         self.tree.tag_configure("submitted", foreground="#147d50")
         self.tree.bind("<<TreeviewSelect>>", self._selection_changed)
         self.tree.bind("<Double-1>", self._open_map_for_row)
@@ -354,8 +355,24 @@ class CollectorApp(tk.Tk):
         self.tree.delete(*self.tree.get_children())
 
         for index, item in enumerate(candidates):
-            status = "Đã đưa vào Review" if item.get("_submitted") else ("Đã có / trùng" if item.get("duplicate") else "Quán mới")
-            tag = ("submitted",) if item.get("_submitted") else (("duplicate",) if item.get("duplicate") else ())
+            status = (
+                "Đã đưa vào Review"
+                if item.get("_submitted")
+                else "Đã có / trùng"
+                if item.get("duplicate")
+                else "Thiếu địa chỉ"
+                if item.get("needsVerification")
+                else "Quán mới"
+            )
+            tag = (
+                ("submitted",)
+                if item.get("_submitted")
+                else ("duplicate",)
+                if item.get("duplicate")
+                else ("needs",)
+                if item.get("needsVerification")
+                else ()
+            )
             self.tree.insert(
                 "",
                 END,
@@ -371,9 +388,13 @@ class CollectorApp(tk.Tk):
                 tags=tag,
             )
 
-        fresh = sum(not item.get("duplicate") for item in candidates)
-        duplicate = len(candidates) - fresh
-        self.count_var.set(f"{len(candidates)} kết quả  •  {fresh} quán mới  •  {duplicate} trùng")
+        fresh = sum(not item.get("duplicate") and not item.get("needsVerification") for item in candidates)
+        needs_check = sum(not item.get("duplicate") and item.get("needsVerification") for item in candidates)
+        duplicate = sum(bool(item.get("duplicate")) for item in candidates)
+        self.count_var.set(
+            f"{len(candidates)} kết quả  •  {fresh} quán đủ địa chỉ  •  "
+            f"{needs_check} thiếu địa chỉ  •  {duplicate} trùng"
+        )
         self._log(logs or f"Nguồn: {endpoint}")
         self._log(f"Hoàn tất từ nguồn: {endpoint}")
         self.tree.selection_remove(self.tree.selection())
@@ -385,7 +406,13 @@ class CollectorApp(tk.Tk):
         messagebox.showerror("Không thể tìm quán", error[:2000])
 
     def select_new(self) -> None:
-        ids = [str(index) for index, item in enumerate(self.candidates) if not item.get("duplicate") and not item.get("_submitted")]
+        ids = [
+            str(index)
+            for index, item in enumerate(self.candidates)
+            if not item.get("duplicate")
+            and not item.get("_submitted")
+            and not item.get("needsVerification")
+        ]
         self.tree.selection_set(ids)
         self._selection_changed()
 
@@ -426,6 +453,7 @@ class CollectorApp(tk.Tk):
             for item_id in selection
             if not self.candidates[int(item_id)].get("duplicate")
             and not self.candidates[int(item_id)].get("_submitted")
+            and not self.candidates[int(item_id)].get("needsVerification")
         ]
         if not selected:
             messagebox.showinfo("Chưa chọn quán mới", "Hãy chọn ít nhất một quán mới trước.")
