@@ -486,6 +486,7 @@ def push_to_apps_script(candidates: list[dict]) -> dict:
         url,
         method="POST",
         payload=json.dumps({"token": token, "candidates": selected}, ensure_ascii=False).encode("utf-8"),
+        timeout=180,
     )
 
 
