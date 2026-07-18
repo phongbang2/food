@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const SHELL_CACHE = "food-finder-shell-" + CACHE_VERSION;
 const DATA_CACHE = "food-finder-data-" + CACHE_VERSION;
 const PAPA_URL = "https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js";
@@ -10,7 +10,13 @@ const LOCAL_SHELL = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./sw.js"
+  "./sw.js",
+  "./assets/food/banh-mi.jpg",
+  "./assets/food/com-tam.jpg",
+  "./assets/food/lau.jpg",
+  "./assets/food/ca-phe.jpg",
+  "./assets/food/an-vat.jpg",
+  "./assets/food/pho.jpg"
 ];
 
 function absoluteUrl(path) {
