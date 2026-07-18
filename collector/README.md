@@ -41,3 +41,22 @@ Token bảo vệ riêng cho webhook Python. Tuy vậy, khi Web app để `Anyone
 ## Lưu ý dữ liệu
 
 Dữ liệu OpenStreetMap có thể thiếu tên đường, giờ mở cửa hoặc quận. Kết quả chỉ là đề xuất. Khi hiển thị dữ liệu OSM trong ứng dụng, cần giữ attribution OpenStreetMap và tuân thủ giấy phép ODbL.
+
+
+## Ứng dụng giao diện Windows
+
+Không cần chạy PowerShell từng lệnh. Sau khi đã cấu hình `collector/.env`, mở thư mục `collector` và nhấp đúp:
+
+```text
+run_gui.bat
+```
+
+Trong app:
+
+1. Chọn quận, loại địa điểm và số lượng.
+2. Bấm **Tìm quán**.
+3. Chọn các dòng cần kiểm tra; nhấp đúp để mở Google Maps.
+4. Bấm **Approve → Đưa vào hàng chờ Review**.
+5. Mở trang Review để kiểm tra và duyệt vào tab `HCM`.
+
+Nút Approve chỉ đưa dữ liệu vào hàng chờ Review, không ghi thẳng vào dữ liệu chính.
