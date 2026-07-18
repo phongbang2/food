@@ -10,7 +10,7 @@ import os
 import threading
 import webbrowser
 from pathlib import Path
-from tkinter import END, LEFT, RIGHT, W, X, Y, messagebox
+from tkinter import BOTH, END, LEFT, RIGHT, W, X, Y, messagebox
 from tkinter import ttk
 import tkinter as tk
 
