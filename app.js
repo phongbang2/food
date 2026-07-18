@@ -544,9 +544,55 @@ function escapeSvgText(value) {
   }[character]));
 }
 
+function getIllustrationAssetUrl(row) {
+  const category = valueKey(getField(row, [
+    "Phân loại món",
+    "Phan loai mon",
+    "Loại món",
+    "Loai mon"
+  ]));
+  const food = valueKey(getField(row, [
+    "Tên món",
+    "Ten mon",
+    "Món ăn"
+  ]));
+
+  if (category.includes("bánh mì") || food.includes("bánh mì")) {
+    return "./assets/food/banh-mi.jpg";
+  }
+  if (category.includes("cơm") || food.includes("cơm tấm")) {
+    return "./assets/food/com-tam.jpg";
+  }
+  if (category.includes("lẩu")) {
+    return "./assets/food/lau.jpg";
+  }
+  if (
+    category.includes("quán nước") ||
+    category.includes("cà phê") ||
+    food.includes("trà") ||
+    food.includes("cà phê")
+  ) {
+    return "./assets/food/ca-phe.jpg";
+  }
+  if (category.includes("ăn vặt")) {
+    return "./assets/food/an-vat.jpg";
+  }
+  if (
+    category.includes("món nước") ||
+    food.includes("phở") ||
+    food.includes("bún") ||
+    food.includes("hủ tiếu") ||
+    food.includes("mì")
+  ) {
+    return "./assets/food/pho.jpg";
+  }
+
+  return "./assets/food/pho.jpg";
+}
+
 function getIllustratedImageUrl(row) {
-  // Dùng minh hoạ SVG nội tuyến để ảnh luôn đúng nhóm món và vẫn hiển thị khi offline.
-  return getFallbackIllustration(row);
+  // Ảnh thật trong Sheet luôn được ưu tiên; đây là ảnh minh hoạ nhẹ cho quán chưa có ảnh.
+  return getIllustrationAssetUrl(row) || getFallbackIllustration(row);
 }
 
 function getFallbackIllustration(row) {
