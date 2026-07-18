@@ -61,9 +61,9 @@ Trong app:
 
 Nút Approve chỉ đưa dữ liệu vào hàng chờ Review, không ghi thẳng vào dữ liệu chính.
 
-## Tìm tín hiệu quán hot miễn phí
+## Tìm review tham khảo miễn phí
 
-Trong giao diện Windows, bấm **Tìm tín hiệu hot** để tìm các bài review và địa điểm nổi bật theo quận hoặc từ khóa. Tính năng này:
+Trong giao diện Windows, bấm **Tìm review tham khảo** để tìm bài review theo quận hoặc từ khóa. Đây không phải danh sách quán chính xác; tính năng này:
 
 - Dùng RSS công khai của Google News và Bing News, không cần API key.
 - Chỉ lưu tiêu đề, nguồn, ngày đăng và link để bạn mở kiểm tra.
@@ -71,4 +71,4 @@ Trong giao diện Windows, bấm **Tìm tín hiệu hot** để tìm các bài r
 - Có truy vấn gợi ý cho review web, TikTok và YouTube nhưng không tự đăng nhập, vượt CAPTCHA hoặc cào trang nội dung.
 - Không dùng tín hiệu hot để tự suy ra địa chỉ. Bạn vẫn cần mở link, xác minh Google Maps rồi Approve.
 
-RSS chỉ là nguồn gợi ý xu hướng; dữ liệu địa điểm chính vẫn cần đối chiếu với OSM/Google Maps và duyệt thủ công.
+RSS chỉ là nguồn bài viết tham khảo; dữ liệu địa điểm chính lấy từ OSM/Google Maps và phải duyệt thủ công. Nếu mục tiêu là đưa quán vào Sheet, luôn ưu tiên luồng **Tìm quán** hoặc **Tìm quán chính xác (OSM)**.
