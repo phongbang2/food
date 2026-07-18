@@ -15,6 +15,7 @@ from tkinter import ttk
 import tkinter as tk
 
 import food_collector as collector
+import trend_collector as trends
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -123,6 +124,7 @@ class CollectorApp(tk.Tk):
         right.grid(row=0, column=1, sticky="e")
         self.config_status = ttk.Label(right, text="Đang kiểm tra cấu hình", style="WarningStatus.TLabel")
         self.config_status.pack(anchor="e", pady=(0, 10))
+        ttk.Button(right, text="Tìm tín hiệu hot", command=self.open_trend_window, style="Soft.TButton").pack(anchor="e", pady=(0, 7))
         ttk.Button(right, text="Mở trang Review  ↗", command=self.open_review_web, style="Soft.TButton").pack(anchor="e")
 
     def _build_search_card(self, root: ttk.Frame) -> None:
@@ -495,6 +497,182 @@ class CollectorApp(tk.Tk):
         self._set_busy(False, "Không gửi được dữ liệu.")
         self._log(f"Lỗi gửi Apps Script: {error}")
         messagebox.showerror("Lỗi gửi Apps Script", error[:2000])
+
+    def open_trend_window(self) -> None:
+        """Show free trend signals from public RSS feeds for manual review."""
+        window = tk.Toplevel(self)
+        window.title("Ăn Sập Sài Gòn • Tín hiệu quán hot")
+        window.geometry("1120x650")
+        window.minsize(900, 560)
+        window.configure(bg="#f4f7fb")
+        window.transient(self)
+
+        district_var = tk.StringVar(value=self.district_var.get().strip())
+        keyword_var = tk.StringVar(value="quán ngon")
+        trend_status = tk.StringVar(value="Chưa tìm tín hiệu")
+        trend_items: list[dict] = []
+
+        outer = ttk.Frame(window, style="App.TFrame", padding=20)
+        outer.pack(fill=BOTH, expand=True)
+        outer.columnconfigure(0, weight=1)
+        outer.rowconfigure(2, weight=1)
+
+        header = ttk.Frame(outer, style="Header.TFrame", padding=(20, 16))
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        header.columnconfigure(0, weight=1)
+        ttk.Label(header, text="TÍN HIỆU QUÁN ĐANG HOT", style="Brand.TLabel").grid(row=0, column=0, sticky=W)
+        ttk.Label(header, text="Tìm review và địa điểm nổi bật để kiểm tra thủ công", style="Title.TLabel").grid(
+            row=1, column=0, sticky=W, pady=(3, 2)
+        )
+        ttk.Label(
+            header,
+            text="RSS công khai • chỉ lưu tiêu đề, nguồn, ngày đăng và link • không tự cào TikTok",
+            style="Subtitle.TLabel",
+        ).grid(row=2, column=0, sticky=W)
+
+        controls = ttk.Frame(outer, style="Card.TFrame", padding=14)
+        controls.grid(row=1, column=0, sticky="ew", pady=(0, 12))
+        controls.columnconfigure(1, weight=1)
+        controls.columnconfigure(3, weight=2)
+        ttk.Label(controls, text="Quận / khu vực", style="FieldLabel.TLabel").grid(row=0, column=0, sticky=W, padx=(0, 8))
+        ttk.Label(controls, text="Từ khóa", style="FieldLabel.TLabel").grid(row=0, column=2, sticky=W, padx=(14, 8))
+        ttk.Entry(controls, textvariable=district_var, width=20).grid(row=1, column=0, columnspan=2, sticky="ew", padx=(0, 14), pady=(5, 0))
+        ttk.Entry(controls, textvariable=keyword_var).grid(row=1, column=2, columnspan=2, sticky="ew", padx=(14, 14), pady=(5, 0))
+        search_button = ttk.Button(controls, text="⌕  Tìm tín hiệu", style="Accent.TButton")
+        search_button.grid(row=1, column=4, sticky="e", pady=(5, 0))
+
+        results = ttk.Frame(outer, style="Card.TFrame", padding=14)
+        results.grid(row=2, column=0, sticky="nsew")
+        results.columnconfigure(0, weight=1)
+        results.rowconfigure(1, weight=1)
+        result_head = ttk.Frame(results, style="Card.TFrame")
+        result_head.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        result_head.columnconfigure(0, weight=1)
+        ttk.Label(result_head, text="Nguồn để kiểm tra", style="Section.TLabel").grid(row=0, column=0, sticky=W)
+        ttk.Label(result_head, textvariable=trend_status, style="Muted.TLabel").grid(row=0, column=1, sticky="e")
+
+        table_frame = ttk.Frame(results, style="Card.TFrame")
+        table_frame.grid(row=1, column=0, sticky="nsew")
+        table_frame.columnconfigure(0, weight=1)
+        table_frame.rowconfigure(0, weight=1)
+        columns = ("title", "source", "published")
+        trend_tree = ttk.Treeview(table_frame, columns=columns, show="headings", selectmode="browse")
+        trend_tree.heading("title", text="Tiêu đề / review")
+        trend_tree.heading("source", text="Nguồn")
+        trend_tree.heading("published", text="Ngày đăng")
+        trend_tree.column("title", width=680, anchor=W, stretch=True)
+        trend_tree.column("source", width=190, anchor=W)
+        trend_tree.column("published", width=170, anchor=W)
+        trend_scroll = ttk.Scrollbar(table_frame, orient="vertical", command=trend_tree.yview)
+        trend_tree.configure(yscrollcommand=trend_scroll.set)
+        trend_tree.grid(row=0, column=0, sticky="nsew")
+        trend_scroll.grid(row=0, column=1, sticky="ns")
+
+        footer = ttk.Frame(outer, style="Card.TFrame", padding=(0, 12, 0, 0))
+        footer.grid(row=3, column=0, sticky="ew")
+        footer.columnconfigure(0, weight=1)
+        progress = ttk.Progressbar(footer, mode="indeterminate", length=180)
+        progress.grid(row=0, column=0, sticky=W)
+        ttk.Label(
+            footer,
+            text="Mở link để xem review gốc, sau đó xác minh tên và địa chỉ trên Google Maps trước khi Approve.",
+            style="Muted.TLabel",
+        ).grid(row=1, column=0, sticky=W, pady=(8, 0))
+        action_frame = ttk.Frame(footer, style="Card.TFrame")
+        action_frame.grid(row=0, column=1, rowspan=2, sticky="e")
+        open_button = ttk.Button(action_frame, text="Mở link đã chọn", style="Dark.TButton")
+        open_button.pack(side=LEFT, padx=(0, 7))
+        copy_button = ttk.Button(action_frame, text="Copy link", style="Soft.TButton")
+        copy_button.pack(side=LEFT)
+
+        def selected_item() -> dict | None:
+            selection = trend_tree.selection()
+            if not selection:
+                return None
+            index = int(selection[0])
+            return trend_items[index] if 0 <= index < len(trend_items) else None
+
+        def open_selected() -> None:
+            item = selected_item()
+            if not item or not item.get("link"):
+                messagebox.showinfo("Chưa chọn tín hiệu", "Hãy chọn một kết quả trước.")
+                return
+            webbrowser.open(item["link"])
+
+        def copy_selected() -> None:
+            item = selected_item()
+            if not item or not item.get("link"):
+                messagebox.showinfo("Chưa chọn tín hiệu", "Hãy chọn một kết quả trước.")
+                return
+            window.clipboard_clear()
+            window.clipboard_append(item["link"])
+            window.update()
+            trend_status.set("Đã copy link nguồn.")
+
+        def on_result(result: dict) -> None:
+            progress.stop()
+            search_button.configure(state="normal")
+            trend_items.clear()
+            trend_items.extend(result.get("items", []))
+            trend_tree.delete(*trend_tree.get_children())
+            for index, item in enumerate(trend_items):
+                trend_tree.insert(
+                    "",
+                    END,
+                    iid=str(index),
+                    values=(
+                        item.get("title", ""),
+                        item.get("source", ""),
+                        item.get("published", ""),
+                    ),
+                )
+            sources = ", ".join(result.get("sources", [])) or "không xác định"
+            errors = result.get("errors", [])
+            suffix = f" • {len(errors)} nguồn lỗi" if errors else ""
+            trend_status.set(f"{len(trend_items)} tín hiệu • {sources}{suffix}")
+            self._log(f"Tín hiệu hot: {len(trend_items)} kết quả từ {sources}.")
+            for error in errors[:2]:
+                self._log(f"RSS cảnh báo: {error}")
+
+        def on_error(error: str) -> None:
+            progress.stop()
+            search_button.configure(state="normal")
+            trend_items.clear()
+            trend_tree.delete(*trend_tree.get_children())
+            trend_status.set("Không lấy được dữ liệu")
+            self._log(f"Lỗi RSS xu hướng: {error}")
+            messagebox.showerror("Không thể tìm tín hiệu", error[:2000])
+
+        def safe_after(callback, *args) -> None:
+            try:
+                if window.winfo_exists():
+                    window.after(0, callback, *args)
+            except tk.TclError:
+                pass
+
+        def search_trends() -> None:
+            if str(search_button["state"]) == "disabled":
+                return
+            district = district_var.get().strip()
+            keyword = keyword_var.get().strip()
+            search_button.configure(state="disabled")
+            progress.start(10)
+            trend_status.set("Đang đọc RSS công khai…")
+
+            def worker() -> None:
+                try:
+                    result = trends.search_trends(district, keyword, 40)
+                    safe_after(on_result, result)
+                except Exception as error:
+                    safe_after(on_error, str(error))
+
+            threading.Thread(target=worker, daemon=True).start()
+
+        search_button.configure(command=search_trends)
+        open_button.configure(command=open_selected)
+        copy_button.configure(command=copy_selected)
+        trend_tree.bind("<Double-1>", lambda _event: open_selected())
+        search_trends()
 
     def open_review_web(self) -> None:
         url = os.environ.get("APPS_SCRIPT_URL", "").strip()
