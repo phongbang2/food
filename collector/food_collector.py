@@ -72,11 +72,14 @@ def load_env(path: Path) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
-def http_json(url: str, method: str = "GET", payload: dict | None = None, timeout: int = 45) -> dict:
+def http_json(url: str, method: str = "GET", payload: dict | bytes | None = None, timeout: int = 20) -> dict:
     body = None
     headers = {"User-Agent": APP_NAME, "Accept": "application/json"}
     if payload is not None:
-        if isinstance(payload, (bytes, bytearray)):
+        if method.upper() == "GET" and isinstance(payload, dict):
+            separator = "&" if "?" in url else "?"
+            url += separator + urlencode(payload)
+        elif isinstance(payload, (bytes, bytearray)):
             body = bytes(payload)
             headers["Content-Type"] = "application/json"
         else:
@@ -112,14 +115,137 @@ def build_query(category: str, district: str) -> str:
 def fetch_overpass(query: str) -> tuple[dict, str]:
     errors: list[str] = []
     for endpoint in DEFAULT_ENDPOINTS:
-        for attempt in range(2):
+        for method in ("POST", "GET"):
             try:
-                return http_json(endpoint, method="POST", payload={"data": query}), endpoint
-            except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, OSError) as error:
-                errors.append(f"{endpoint}: {error}")
-                if attempt == 0:
-                    time.sleep(1.5)
+                print(f"Đang thử Overpass: {endpoint} ({method})", file=sys.stderr)
+                return http_json(endpoint, method=method, payload={"data": query}, timeout=18), endpoint
+            except Exception as error:
+                errors.append(f"{endpoint} {method}: {error}")
+                time.sleep(0.5)
     raise RuntimeError("Không kết nối được Overpass:\n" + "\n".join(errors))
+
+
+def map_arcgis_category(raw_category: str, name: str) -> str:
+    text = normalize(f"{raw_category} {name}")
+    if any(word in text for word in ("bakery", "banh mi", "bread")):
+        return "Bánh mì"
+    if any(word in text for word in ("cafe", "coffee", "drink")):
+        return "Quán nước"
+    if any(word in text for word in ("fast", "burger", "pizza")):
+        return "Fastfood"
+    if any(word in text for word in ("rice", "com")):
+        return "Cơm"
+    return "Món khô"
+
+
+def web_mercator_to_wgs84(geometry: dict | None) -> tuple[float, float] | None:
+    if not geometry or geometry.get("x") is None or geometry.get("y") is None:
+        return None
+    x = float(geometry["x"])
+    y = float(geometry["y"])
+    longitude = x / 20037508.34 * 180
+    latitude = y / 20037508.34 * 180
+    latitude = 180 / 3.141592653589793 * (
+        2 * __import__("math").atan(__import__("math").exp(latitude * 3.141592653589793 / 180))
+        - 3.141592653589793 / 2
+    )
+    return latitude, longitude
+
+
+def fetch_arcgis_places(
+    district: str,
+    category: str,
+    allowed_types: list[str],
+    allowed_districts: list[str],
+    limit: int,
+) -> tuple[list[dict], str]:
+    base_url = "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/Food_in_HCM/FeatureServer/0/query"
+    params = {
+        "where": "1=1",
+        "outFields": "*",
+        "returnGeometry": "true",
+        "resultRecordCount": "1000",
+        "f": "json",
+    }
+    payload = http_json(base_url, method="GET", payload=params, timeout=25)
+    candidates: list[dict] = []
+
+    for feature in payload.get("features", []):
+        attributes = feature.get("attributes") or {}
+        keys = list(attributes)
+
+        def read(aliases: tuple[str, ...]) -> str:
+            normalized = {normalize(key): key for key in keys}
+            for alias in aliases:
+                key = normalized.get(normalize(alias))
+                if key is not None and attributes.get(key) not in (None, ""):
+                    return str(attributes[key]).strip()
+            for key in keys:
+                if any(normalize(alias) in normalize(key) for alias in aliases):
+                    if attributes.get(key) not in (None, ""):
+                        return str(attributes[key]).strip()
+            return ""
+
+        name = read(("name", "ten quan", "ten nha hang", "restaurant", "title"))
+        if not name:
+            continue
+        raw_category = read(("category", "loai", "type", "cuisine", "food"))
+        item_type = canonical_choice(map_arcgis_category(raw_category, name), allowed_types, "Món khô")
+        item_district = read(("district", "quan", "huyen", "suburb")) or district
+        if allowed_districts:
+            district_match = next(
+                (item for item in allowed_districts if normalize(item) == normalize(item_district)),
+                "",
+            )
+            if not district_match:
+                continue
+            item_district = district_match
+
+        coordinates = web_mercator_to_wgs84(feature.get("geometry"))
+        street = read(("address", "dia chi", "street", "duong", "location")) or "Chưa rõ địa chỉ"
+        map_url = ""
+        if coordinates:
+            latitude, longitude = coordinates
+            map_url = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+        object_id = read(("objectid", "fid", "id"))
+        source = (
+            "https://services.arcgis.com/EaQ3hSM51DBnlwMq/ArcGIS/rest/services/"
+            "Food_in_HCM/FeatureServer/0/query?where="
+            + __import__("urllib.parse", fromlist=["quote"]).quote(f"OBJECTID={object_id}")
+            + "&outFields=*&f=pjson"
+            if object_id
+            else base_url
+        )
+        candidate = {
+            "id": f"arcgis-{object_id or name}",
+            "name": name,
+            "food": raw_category or "Món ăn đang cập nhật",
+            "type": item_type,
+            "street": street,
+            "district": item_district,
+            "hours": read(("opening hours", "gio mo cua", "hours")),
+            "price": "",
+            "note": "Nguồn ArcGIS Food_in_HCM; cần xác minh tên, địa chỉ và giờ mở cửa.",
+            "source": source,
+            "mapUrl": map_url,
+            "reason": "Đề xuất từ ArcGIS công khai; cần kiểm tra thực tế trước khi duyệt.",
+            "duplicate": False,
+        }
+        if category != "all":
+            wanted = normalize(category)
+            detected = normalize(map_arcgis_category(raw_category, name))
+            if (
+                (wanted == "restaurant" and detected not in {"mon kho", "com"})
+                or (wanted == "cafe" and detected != "quan nuoc")
+                or (wanted == "fastfood" and detected != "fastfood")
+                or (wanted == "bakery" and detected != "banh mi")
+            ):
+                continue
+        candidates.append(candidate)
+
+    return candidates[:limit], "ArcGIS Food_in_HCM"
+
+
 
 
 def read_sheet_catalog() -> tuple[set[str], list[str], list[str]]:
@@ -295,24 +421,39 @@ def map_element(element: dict, requested_district: str, allowed_types: list[str]
 
 def collect(args: argparse.Namespace) -> tuple[list[dict], str]:
     existing, allowed_types, allowed_districts = read_sheet_catalog()
-    query = build_query(args.category, args.district)
-    payload, endpoint = fetch_overpass(query)
     candidates: list[dict] = []
-    seen: set[str] = set()
+    endpoint = ""
 
-    for element in payload.get("elements", []):
-        item = map_element(element, args.district, allowed_types, allowed_districts)
-        if not item:
-            continue
+    try:
+        query = build_query(args.category, args.district)
+        payload, endpoint = fetch_overpass(query)
+        elements = payload.get("elements", [])
+        for element in elements:
+            item = map_element(element, args.district, allowed_types, allowed_districts)
+            if item:
+                candidates.append(item)
+    except Exception as overpass_error:
+        print(f"Overpass không dùng được, chuyển sang ArcGIS: {overpass_error}", file=sys.stderr)
+        candidates, endpoint = fetch_arcgis_places(
+            args.district,
+            args.category,
+            allowed_types,
+            allowed_districts,
+            args.limit,
+        )
+
+    seen: set[str] = set()
+    unique: list[dict] = []
+    for item in candidates:
         key = restaurant_key(item)
         if not key or key in seen:
             continue
         seen.add(key)
         item["duplicate"] = key in existing
-        candidates.append(item)
+        unique.append(item)
 
-    candidates.sort(key=lambda item: (item["duplicate"], normalize(item["name"])))
-    return candidates[: args.limit], endpoint
+    unique.sort(key=lambda item: (item["duplicate"], normalize(item["name"])))
+    return unique[: args.limit], endpoint
 
 
 def write_outputs(candidates: list[dict], output_dir: Path) -> tuple[Path, Path]:
