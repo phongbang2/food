@@ -208,7 +208,6 @@ class CollectorApp(tk.Tk):
 
         ttk.Label(detail, text="Chi tiết địa điểm", style="Section.TLabel").grid(row=0, column=0, sticky=W)
         ttk.Label(detail, textvariable=self.selected_var, style="Muted.TLabel").grid(row=1, column=0, sticky=W, pady=(4, 18))
-        ttk.Label(detail, textvariable=self.detail_name_var, style="Title.TLabel").configure(background="#ffffff", foreground="#102a43")
         name_label = ttk.Label(detail, textvariable=self.detail_name_var, style="Section.TLabel")
         name_label.grid(row=2, column=0, sticky=W)
         ttk.Label(detail, textvariable=self.detail_meta_var, style="Muted.TLabel").grid(row=3, column=0, sticky=W, pady=(4, 18))
