@@ -32,7 +32,8 @@ CATEGORY_LABELS = {
     "fastfood": "Fastfood",
     "bakery": "Tiệm bánh / bánh mì",
 }
-CATEGORY_VALUES = list(CATEGORY_LABELS)
+CATEGORY_VALUES = list(CATEGORY_LABELS.values())
+CATEGORY_BY_LABEL = {label: key for key, label in CATEGORY_LABELS.items()}
 
 
 class CollectorApp(tk.Tk):
@@ -49,7 +50,7 @@ class CollectorApp(tk.Tk):
         self.status_var = StringVar(value="Sẵn sàng")
         self.count_var = StringVar(value="Chưa có kết quả")
         self.district_var = StringVar(value="Quận 2")
-        self.category_var = StringVar(value="all")
+        self.category_var = StringVar(value=CATEGORY_LABELS["all"])
         self.limit_var = StringVar(value="10")
 
         self._configure_style()
@@ -191,9 +192,7 @@ class CollectorApp(tk.Tk):
         self.log_text.configure(state="disabled")
 
     def _category_changed(self, _event=None) -> None:
-        current = self.category_var.get()
-        if current in CATEGORY_LABELS:
-            self.category_var.set(current)
+        return
 
     def _refresh_config_status(self) -> None:
         url_ok = bool(os.environ.get("APPS_SCRIPT_URL", "").strip())
@@ -240,7 +239,7 @@ class CollectorApp(tk.Tk):
         if self.busy:
             return
         district = self.district_var.get().strip()
-        category = self.category_var.get().strip() or "all"
+        category = CATEGORY_BY_LABEL.get(self.category_var.get().strip(), "all")
         limit = self._parse_limit()
         self._set_busy(True, "Đang tìm dữ liệu công khai…")
         self.count_var.set("Đang xử lý…")
